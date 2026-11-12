@@ -1,6 +1,6 @@
 /**
- * Endless fabric: an unbounded patchwork of square panels, each its own design,
- * gliding past the screen. Pure functions: where the camera is at a time, which
+ * Endless fabric: an unbounded patchwork of panels, each its own design and a
+ * bit larger than the screen, gliding past. Pure functions: where the camera is at a time, which
  * panels it needs, and the design of each panel.
  */
 import { applyLayout, type Design } from '../core/design';
@@ -9,11 +9,14 @@ import { patternOnly } from '../layouts/registry';
 import type { Size } from '../layouts/types';
 import { nextDesign, type ExhibitionSettings } from './settings';
 
-/** Seconds the cloth keeps one direction, and seconds a turn to the next takes. */
-const STRAIGHT_SECONDS = 22;
-const TURN_SECONDS = 6;
 /** Gliding speed in screen sizes (the shorter side) per second: calm. */
 const SPEED = 0.05;
+/** Seconds each design fills the whole screen as the cloth glides past it, at least. */
+export const FULL_SCREEN_SECONDS = 5;
+/** Radius of the curve at each turn, in screen sizes. */
+const TURN_RADIUS = 0.15;
+/** Panels the cloth runs straight across between turns: 1 up to this many. */
+const LONGEST_RUN = 3;
 
 type Direction = readonly [number, number];
 const DIRECTIONS: readonly Direction[] = [
@@ -23,61 +26,80 @@ const DIRECTIONS: readonly Direction[] = [
   [0, -1],
 ];
 
-/** Directions of the stretches: a quarter turn left or right each time, never a sudden reversal. */
-function* directions(seed: number): Generator<Direction> {
-  const random = mulberry32(seed);
-  let index = Math.floor(random() * 4);
-  for (;;) {
-    yield DIRECTIONS[index];
-    index = (index + (random() < 0.5 ? 1 : 3)) % 4;
-  }
-}
-
-/** ∫₀ᵘ smoothstep: how far a smooth turn has carried the new direction's share. */
-function easedDistance(u: number): number {
-  return u * u * u - (u * u * u * u) / 2;
+/** How the cloth glides: panel size and turn radius in threads, speed in threads per second. */
+export interface FabricMotion {
+  panel: Size;
+  turnRadius: number;
+  speed: number;
+  /** How far before a panel's middle the screen is first filled by it (half the margin). */
+  lead: number;
 }
 
 /**
- * Camera centre (in threads; may be negative) after `seconds` of gliding at
- * `threadsPerSecond`. Each stretch starts with a smooth turn from the previous
- * direction (the first from rest), so speed changes gently and never jumps.
+ * Panels a bit larger than the screen both ways, so a design fills the whole
+ * screen for FULL_SCREEN_SECONDS as it glides past, with room for the curve of a
+ * turn; a whole number of design cells. `scale`: pixels per thread.
  */
-export function fabricCentre(seconds: number, threadsPerSecond: number, seed: number): [number, number] {
-  let [x, y] = [0, 0];
-  let previous: Direction = [0, 0];
-  let remaining = seconds;
-  for (const direction of directions(seed)) {
-    const elapsed = Math.min(remaining, STRAIGHT_SECONDS + TURN_SECONDS);
-    // While turning, velocity eases from the previous direction to the new one.
-    const turning = Math.min(elapsed, TURN_SECONDS) / TURN_SECONDS;
-    const alongNew = easedDistance(turning) * TURN_SECONDS + Math.max(0, elapsed - TURN_SECONDS);
-    const alongPrevious = turning * TURN_SECONDS - easedDistance(turning) * TURN_SECONDS;
-    x += (previous[0] * alongPrevious + direction[0] * alongNew) * threadsPerSecond;
-    y += (previous[1] * alongPrevious + direction[1] * alongNew) * threadsPerSecond;
-    remaining -= elapsed;
-    if (remaining <= 0) break;
-    previous = direction;
+export function fabricMotion(viewport: Size, scale: number, threadsPerCell: number): FabricMotion {
+  const screen = Math.min(viewport.width, viewport.height) / scale;
+  const speed = SPEED * screen;
+  const margin = speed * FULL_SCREEN_SECONDS + 2 * TURN_RADIUS * screen * 0.5;
+  const cells = (threads: number) => Math.max(8, Math.ceil(threads / threadsPerCell)) * threadsPerCell;
+  return {
+    panel: { width: cells(viewport.width / scale + margin), height: cells(viewport.height / scale + margin) },
+    turnRadius: TURN_RADIUS * screen,
+    speed,
+    lead: margin / 2,
+  };
+}
+
+/**
+ * Camera centre (threads) after `seconds`. The cloth glides at a constant speed
+ * along the centre lines of the panels, straight across 1 to LONGEST_RUN panels,
+ * then turns a quarter left or right on a gentle curve centred on a panel's
+ * middle, never reversing. Running along centre lines keeps each design filling
+ * the screen while it passes.
+ */
+export function fabricCentre(
+  seconds: number,
+  { panel, turnRadius, speed, lead }: FabricMotion,
+  seed: number,
+): [number, number] {
+  const random = mulberry32(seed);
+  let direction = DIRECTIONS[Math.floor(random() * 4)];
+  // Start where the first panel begins to fill the screen, so it gets its full time too.
+  let [x, y] = [panel.width / 2 - direction[0] * lead, panel.height / 2 - direction[1] * lead];
+  let distance = Math.max(0, seconds) * speed;
+  let curvedIn = -lead; // how far into this run (from a panel's middle) we already are
+  for (;;) {
+    const panels = 1 + Math.floor(random() * LONGEST_RUN);
+    const run = panels * (direction[0] !== 0 ? panel.width : panel.height);
+    const straight = run - curvedIn - turnRadius;
+    if (distance <= straight) return [x + direction[0] * distance, y + direction[1] * distance];
+    distance -= straight;
+    // Quarter circle from `turnRadius` before the corner to `turnRadius` after it.
+    const next = DIRECTIONS[(DIRECTIONS.indexOf(direction) + (random() < 0.5 ? 1 : 3)) % 4];
+    const [startX, startY] = [x + direction[0] * straight, y + direction[1] * straight];
+    const arc = (Math.PI / 2) * turnRadius;
+    const along = Math.min(distance, arc) / turnRadius; // radians turned
+    // Centre of the curve: one radius to the side we turn to.
+    const [centreX, centreY] = [startX + next[0] * turnRadius, startY + next[1] * turnRadius];
+    const pointX = centreX - next[0] * turnRadius * Math.cos(along) + direction[0] * turnRadius * Math.sin(along);
+    const pointY = centreY - next[1] * turnRadius * Math.cos(along) + direction[1] * turnRadius * Math.sin(along);
+    if (distance <= arc) return [pointX, pointY];
+    distance -= arc;
+    [x, y] = [pointX, pointY];
+    direction = next;
+    curvedIn = turnRadius;
   }
-  return [x, y];
-}
-
-/** Gliding speed in threads per second for a screen and scale. */
-export function fabricSpeed(viewport: Size, scale: number): number {
-  return (SPEED * Math.min(viewport.width, viewport.height)) / scale;
-}
-
-/** Side of a panel in threads: about one screen size, a whole number of design cells. */
-export function panelSize(viewport: Size, scale: number, threadsPerCell: number): number {
-  const threads = Math.min(viewport.width, viewport.height) / scale;
-  return Math.max(threadsPerCell * 8, Math.round(threads / threadsPerCell) * threadsPerCell);
 }
 
 /** Panels (column, row) overlapping the area from (x, y), width × height threads. */
-export function panelsIn(x: number, y: number, width: number, height: number, panel: number): [number, number][] {
+export function panelsIn(x: number, y: number, width: number, height: number, panel: Size): [number, number][] {
   const panels: [number, number][] = [];
-  for (let row = Math.floor(y / panel); row * panel < y + height; row++)
-    for (let column = Math.floor(x / panel); column * panel < x + width; column++) panels.push([column, row]);
+  for (let row = Math.floor(y / panel.height); row * panel.height < y + height; row++)
+    for (let column = Math.floor(x / panel.width); column * panel.width < x + width; column++)
+      panels.push([column, row]);
   return panels;
 }
 

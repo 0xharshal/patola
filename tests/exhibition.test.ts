@@ -3,7 +3,7 @@ import { cameraAt, gridInterest, planImages, planTour, zoomMove } from '../src/e
 import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
 import { applyLayout, defaultDesign } from '../src/core/design';
-import { fabricCentre, fabricSpeed, panelDesign, panelsIn, panelSize } from '../src/exhibition/fabric';
+import { fabricCentre, fabricMotion, panelDesign, panelsIn } from '../src/exhibition/fabric';
 import { defaultParams } from '../src/core/params';
 import { mulberry32 } from '../src/core/rng';
 import { designToQuery, parseUrl } from '../src/core/url';
@@ -244,48 +244,70 @@ describe('exhibition images', () => {
 
 describe('endless fabric', () => {
   const screen = { width: 1920, height: 1080 };
+  const scale = 3;
+  const motion = fabricMotion(screen, scale, 2);
+  const fps = 30;
+  /** Camera centres for `seconds` at 30 fps. */
+  const path = (seconds: number, seed = 9) =>
+    Array.from({ length: seconds * fps + 1 }, (_, frame) => fabricCentre(frame / fps, motion, seed));
 
-  it('glides at a calm speed, turning smoothly, never stopping or jumping', () => {
-    const speed = fabricSpeed(screen, 3);
-    const fps = 30;
-    let previous = fabricCentre(0, speed, 9);
-    let previousVelocity = [0, 0];
-    let fastest = 0;
+  it('glides at one calm speed, turning on gentle curves, left, right, up and down', () => {
+    const centres = path(1200);
     let suddenest = 0;
     const directions = new Set<string>();
-    for (let frame = 1; frame <= 600 * fps; frame++) {
-      const centre = fabricCentre(frame / fps, speed, 9);
-      const velocity = [(centre[0] - previous[0]) * fps, (centre[1] - previous[1]) * fps];
-      // Screen sizes per second, and its change per second.
-      const screens = (Math.hypot(velocity[0], velocity[1]) * 3) / screen.height;
-      fastest = Math.max(fastest, screens);
-      if (frame > 1)
-        suddenest = Math.max(
-          suddenest,
-          (Math.hypot(velocity[0] - previousVelocity[0], velocity[1] - previousVelocity[1]) * fps * 3) / screen.height,
-        );
-      if (frame > 10 * fps) expect(screens).toBeGreaterThan(0.03); // keeps moving once started
-      if (screens > 0.049)
-        directions.add(`${Math.sign(Math.round(velocity[0]))},${Math.sign(Math.round(velocity[1]))}`);
-      [previous, previousVelocity] = [centre, velocity];
+    for (let frame = 2; frame < centres.length; frame++) {
+      const [[x0, y0], [x1, y1], [x2, y2]] = centres.slice(frame - 2, frame + 1);
+      const velocity = [(x2 - x1) * fps, (y2 - y1) * fps];
+      // Constant speed, in screen sizes per second.
+      expect((Math.hypot(velocity[0], velocity[1]) * scale) / screen.height).toBeCloseTo(0.05, 4);
+      const acceleration = Math.hypot(x2 - 2 * x1 + x0, y2 - 2 * y1 + y0) * fps * fps;
+      suddenest = Math.max(suddenest, (acceleration * scale) / screen.height);
+      directions.add(`${Math.round(velocity[0] / motion.speed)},${Math.round(velocity[1] / motion.speed)}`);
     }
-    expect(fastest).toBeLessThanOrEqual(0.0501);
-    expect(suddenest).toBeLessThan(0.02);
-    expect(directions.size).toBe(4); // left, right, up and down
+    expect(suddenest).toBeLessThan(0.02); // screen sizes per second², only while curving
+    // Straight runs in all four directions (diagonals only appear mid-curve).
+    const straight = [...directions].filter(
+      (direction) => direction.split(',').filter((part) => part !== '0').length === 1,
+    );
+    expect(straight).toHaveLength(4);
   });
 
-  it('lays out panels of whole cells around any area, also at negative positions', () => {
-    const panel = panelSize(screen, 3, 2);
-    expect(panel % 2).toBe(0);
-    expect(panel * 3).toBeCloseTo(screen.height, -1);
-    const panels = panelsIn(-panel * 0.5, panel * 1.5, panel * 2, panel, panel);
+  it('lets every design it passes fill the whole screen for at least five seconds', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      // Seconds each panel has filled the screen without a break, per visit.
+      const visits: { panel: string; seconds: number }[] = [];
+      for (const [x, y] of path(300, seed)) {
+        const [halfWidth, halfHeight] = [screen.width / 2 / scale, screen.height / 2 / scale];
+        const shown = panelsIn(x - halfWidth, y - halfHeight, 2 * halfWidth, 2 * halfHeight, motion.panel);
+        const last = visits.at(-1);
+        if (shown.length === 1 && last?.panel === String(shown[0])) last.seconds += 1 / fps;
+        else if (shown.length === 1) visits.push({ panel: String(shown[0]), seconds: 0 });
+        else if (last && last.panel !== '') visits.push({ panel: '', seconds: 0 });
+      }
+      const designVisits = visits.filter((visit) => visit.panel !== '');
+      // The last visit may be cut off by the end of the run.
+      for (const visit of designVisits.slice(0, -1)) expect(visit.seconds).toBeGreaterThanOrEqual(5);
+      expect(designVisits.length).toBeGreaterThan(5);
+    }
+  });
+
+  it('uses panels a little larger than the screen, of whole cells', () => {
+    expect(motion.panel.width % 2).toBe(0);
+    expect(motion.panel.height % 2).toBe(0);
+    expect(motion.panel.width * scale).toBeGreaterThan(screen.width);
+    expect(motion.panel.height * scale).toBeGreaterThan(screen.height);
+    expect(motion.panel.height * scale).toBeLessThan(screen.height * 1.5);
+    const panels = panelsIn(
+      -motion.panel.width / 2,
+      motion.panel.height * 1.5,
+      motion.panel.width * 2,
+      10,
+      motion.panel,
+    );
     expect(panels).toEqual([
       [-1, 1],
       [0, 1],
       [1, 1],
-      [-1, 2],
-      [0, 2],
-      [1, 2],
     ]);
   });
 

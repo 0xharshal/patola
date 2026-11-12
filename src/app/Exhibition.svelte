@@ -10,7 +10,7 @@
   import { TourPictures } from '../exhibition/pictures';
   import type { PatolaRenderer } from '../render/renderer';
   import { exhibitionSettings, nextDesign } from '../exhibition/settings';
-  import { fabricCentre, fabricSpeed, panelSize } from '../exhibition/fabric';
+  import { fabricCentre, fabricMotion } from '../exhibition/fabric';
   import { FabricPanels } from '../exhibition/fabricPanels';
   import { viewFor, type Camera } from '../render/camera';
   import { getGenerator } from '../generators/registry';
@@ -106,20 +106,18 @@
   // Endless fabric: panels of single-pattern designs around the one on show, gliding by.
   const fabricBase: Design = JSON.parse(JSON.stringify(design));
   const fabricScale = $derived(FABRIC_SCALE * pixelRatio);
-  const fabricPanel = $derived(panelSize(viewport, fabricScale, frame.render.step));
-  const fabricThreadsPerSecond = $derived(fabricSpeed(viewport, fabricScale));
+  const motion = $derived(fabricMotion(viewport, fabricScale, frame.render.step));
   let panels: FabricPanels | null = null;
 
   function fabricCamera(seconds: number): Camera {
-    const [centreX, centreY] = fabricCentre(seconds, fabricThreadsPerSecond, fabricBase.seed);
-    // Start in the middle of the first panel (the design on show).
-    return { centreX: centreX + fabricPanel / 2, centreY: centreY + fabricPanel / 2, scale: fabricScale };
+    const [centreX, centreY] = fabricCentre(seconds, motion, fabricBase.seed);
+    return { centreX, centreY, scale: fabricScale };
   }
 
   function drawFabric(renderer: PatolaRenderer, shown: Frame) {
-    if (panels?.renderer !== renderer || panels.panel !== fabricPanel || panels.scale !== fabricScale) {
+    if (panels?.renderer !== renderer || panels.panel !== motion.panel || panels.scale !== fabricScale) {
       panels?.dispose();
-      panels = new FabricPanels(renderer, fabricBase, options.vary, fabricPanel, fabricScale);
+      panels = new FabricPanels(renderer, fabricBase, options.vary, motion.panel, fabricScale);
     }
     // Where the cloth will be in the next seconds (turns included), so those panels get prepared.
     const upcoming = FABRIC_LOOKAHEAD_SECONDS.map((ahead) => viewFor(fabricCamera(elapsed + ahead), viewport));
@@ -193,18 +191,13 @@
   /**
    * Keep the screen on while the exhibition runs. Browsers allow it only on secure
    * pages (https or localhost) and drop it when the page is hidden, so it is asked
-   * for again when the page shows or is touched; `screenStaysOn` tells the viewer.
+   * for again when the page shows or is touched.
    */
-  let screenStaysOn: boolean | null = $state(null);
   let wakeLock: WakeLockSentinel | null = null;
   async function keepScreenOn() {
     if (document.visibilityState !== 'visible' || (wakeLock && !wakeLock.released)) return;
-    if (!('wakeLock' in navigator)) {
-      screenStaysOn = false;
-      return;
-    }
+    if (!('wakeLock' in navigator)) return;
     wakeLock = await navigator.wakeLock.request('screen').catch(() => null);
-    screenStaysOn = wakeLock !== null;
   }
   onMount(() => {
     void keepScreenOn();
@@ -306,13 +299,6 @@
     {/if}
     <button onclick={exit} title="Back to the editor with this design">Edit this design</button>
   </div>
-  {#if screenStaysOn === false}
-    <p class="warning" class:visible={controlsVisible || paused}>
-      {window.isSecureContext
-        ? 'This browser may let the screen turn off during the exhibition.'
-        : 'The screen may turn off: browsers keep it on only for secure (https://) pages.'}
-    </p>
-  {/if}
 </div>
 
 <style>
@@ -394,27 +380,6 @@
   }
   .controls button:hover:not(:disabled) {
     background: rgb(255 255 255 / 0.12);
-  }
-  .warning {
-    position: absolute;
-    top: 72px;
-    left: 50%;
-    translate: -50% 0;
-    width: max-content;
-    max-width: calc(100vw - 32px);
-    margin: 0;
-    padding: 6px 14px;
-    border-radius: 6px;
-    background: rgb(12 11 10 / 0.72);
-    text-align: center;
-    font-size: 0.85rem;
-    color: #e8c37a;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-  }
-  .warning.visible {
-    opacity: 1;
   }
   .controls button:disabled {
     opacity: 0.4;

@@ -6,6 +6,7 @@
 import { compose } from '../core/compose';
 import { renderSettings, type Design } from '../core/design';
 import type { Frame, PatolaRenderer, RenderedImage, View } from '../render/renderer';
+import type { Size } from '../layouts/types';
 import type { ExhibitionSettings } from './settings';
 import { panelDesign, panelsIn } from './fabric';
 
@@ -23,12 +24,12 @@ const keyOf = (column: number, row: number) => `${column},${row}`;
 export class FabricPanels {
   private panels = new Map<string, Panel>();
 
-  /** `panel`: side in threads; `scale`: pixels per thread the panels are rendered (and shown) at. */
+  /** `panel`: size in threads; `scale`: pixels per thread the panels are rendered (and shown) at. */
   constructor(
     readonly renderer: PatolaRenderer,
     private base: Design,
     private vary: ExhibitionSettings['vary'],
-    readonly panel: number,
+    readonly panel: Size,
     readonly scale: number,
   ) {}
 
@@ -53,7 +54,7 @@ export class FabricPanels {
       // Normally prepared ahead; rendered right now only if it wasn't (e.g. at the start).
       const panel = this.panelAt(column, row);
       this.render(panel, Infinity);
-      this.renderer.drawImage(panel.image, view, 1, { x: column * this.panel, y: row * this.panel });
+      this.renderer.drawImage(panel.image, view, 1, { x: column * this.panel.width, y: row * this.panel.height });
     }
     this.prepareAhead(ahead);
 
@@ -88,7 +89,7 @@ export class FabricPanels {
 
   /** Design of the panel at a fabric position (threads). */
   designAt(x: number, y: number): Design {
-    return panelDesign(this.base, this.vary, Math.floor(x / this.panel), Math.floor(y / this.panel));
+    return panelDesign(this.base, this.vary, Math.floor(x / this.panel.width), Math.floor(y / this.panel.height));
   }
 
   private panelAt(column: number, row: number): Panel {
@@ -111,8 +112,10 @@ export class FabricPanels {
     const design = panelDesign(this.base, this.vary, column, row);
     const render = renderSettings(design.render);
     // "Pattern only" fills the pixel size it is given: one panel, at the design's thread size.
-    const side = this.panel * render.threadPx;
-    const composition = compose(design, { width: side, height: side });
+    const composition = compose(design, {
+      width: this.panel.width * render.threadPx,
+      height: this.panel.height * render.threadPx,
+    });
     const frame = {
       grid: composition.grid,
       warpHorizontal: composition.layout.warpHorizontal,
@@ -121,8 +124,13 @@ export class FabricPanels {
       render,
       seed: design.seed,
     };
-    const pixels = Math.max(1, Math.round(this.panel * this.scale));
-    const image = this.renderer.createImage({ x: 0, y: 0, width: this.panel, height: this.panel }, pixels, pixels);
+    // Shown at exactly the size it is rendered, so no mipmaps.
+    const image = this.renderer.createImage(
+      { x: 0, y: 0, ...this.panel },
+      Math.max(1, Math.round(this.panel.width * this.scale)),
+      Math.max(1, Math.round(this.panel.height * this.scale)),
+      false,
+    );
     const panel = { design, frame, image };
     this.panels.set(keyOf(column, row), panel);
     return panel;

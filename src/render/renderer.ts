@@ -80,6 +80,8 @@ export interface RenderedImage {
   height: number;
   /** Rows rendered so far (rendering is spread over several calls). */
   rowsDone: number;
+  /** Smaller copies for showing the image reduced; images shown only at their own size skip them. */
+  mipmaps: boolean;
   /** The weave context it belongs to; images don't survive a lost context. */
   generation: number;
   texture: WebGLTexture;
@@ -243,14 +245,14 @@ export class PatolaRenderer {
   }
 
   /** An empty image of `area` (threads) at width × height pixels; fill it with renderImage. */
-  createImage(area: Rect, width: number, height: number): RenderedImage {
+  createImage(area: Rect, width: number, height: number, mipmaps = true): RenderedImage {
     const gl = this.gl;
     const texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    const levels = Math.floor(Math.log2(Math.max(width, height))) + 1;
+    const levels = mipmaps ? Math.floor(Math.log2(Math.max(width, height))) + 1 : 1;
     // sRGB storage: 8 bits where the eye needs them, and filtering in linear light.
     gl.texStorage2D(gl.TEXTURE_2D, levels, gl.SRGB8_ALPHA8, width, height);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, mipmaps ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -258,7 +260,7 @@ export class PatolaRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    return { area, width, height, rowsDone: 0, generation: this.generation, texture, framebuffer };
+    return { area, width, height, rowsDone: 0, mipmaps, generation: this.generation, texture, framebuffer };
   }
 
   /** Whether an image can still be used (a lost context drops it). */
@@ -297,8 +299,10 @@ export class PatolaRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     image.rowsDone += rows;
     if (image.rowsDone < image.height) return false;
-    gl.bindTexture(gl.TEXTURE_2D, image.texture);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    if (image.mipmaps) {
+      gl.bindTexture(gl.TEXTURE_2D, image.texture);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    }
     return true;
   }
 
