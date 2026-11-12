@@ -35,12 +35,14 @@ Don't repeat those here; link to them.
 - `src/motifs/` — `format.ts` (motif text/JSON format), `builtin.ts` (built-in
   motifs as ASCII art), `library.ts` (built-in + user motifs), `editing.ts`
   (pure grid operations behind the editor).
-- `src/exhibition/` — the full-screen slideshow: `tour.ts` (camera stops and smooth
-  van Wijk zoom-and-pan flights, pure), `settings.ts` (`EXHIBITION_SCHEMA`, `x.` in URLs,
-  and the next design); the UI is `src/app/Exhibition.svelte`.
+- `src/exhibition/` — the full-screen slideshow: `tour.ts` (camera stops, calm zoom moves
+  that keep the screen full, and the plan of prerendered images; pure), `pictures.ts`
+  (renders, prepares ahead and crossfades those images), `settings.ts` (`EXHIBITION_SCHEMA`,
+  `x.` in URLs, and the next design); the UI is `src/app/Exhibition.svelte`.
 - `src/education/guide.ts` — the Learn guide (technique texts; motif/layout texts come from their definitions) and its actions.
 - `src/palettes/` — presets, random palettes, `extract.ts` (k-means quantising).
-- `src/render/` — `renderer.ts` (WebGL2, linear-light palette, supersampling), `shaders.ts`
+- `src/render/` — `renderer.ts` (WebGL2, linear-light palette, supersampling, render into
+  sRGB images in bands and show them), `shaders.ts`
   (double-ikat weave: bundle shifts, wicking, yarn texture, sheen), `camera.ts`.
 - `src/export/` — `exporter.ts` (one entry for all formats), `raster.ts` (tiled
   rendering in bands), `png.ts` (streaming PNG via CompressionStream), `svg.ts`, `sizes.ts`.

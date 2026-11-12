@@ -5,7 +5,7 @@
  * Pure functions, so the same plan gives the same moves.
  */
 import { fitCamera, MAX_SCALE, type Camera } from '../render/camera';
-import type { Size } from '../layouts/types';
+import type { Rect, Size } from '../layouts/types';
 import type { Rng } from '../core/rng';
 import type { Grid } from '../core/compose';
 
@@ -217,4 +217,85 @@ export function gridInterest(grid: Grid, threadsPerCell: number): (x: number, y:
     for (; seen; seen &= seen - 1) colours++;
     return colours;
   };
+}
+
+/** One prerendered picture: shown from `from` to `to` (tour progress), covering `area` (threads) at `scale`. */
+export interface TourImage {
+  from: number;
+  to: number;
+  area: Rect;
+  scale: number;
+}
+
+/** Largest zoom-out of an image before the next, sharper one takes over. */
+const IMAGE_ZOOM_STEP = Math.SQRT2;
+/** Largest image, in screens' worth of pixels. */
+const IMAGE_SCREENS = 3;
+/** Camera positions per second of tour used to plan the images. */
+const PLAN_SAMPLES_PER_SECOND = 60;
+/** Extra size and sharpness of each image, as a share (frames fall between the planning samples). */
+const IMAGE_MARGIN = 0.02;
+
+function viewRect(camera: Camera, viewport: Size): Rect {
+  const width = viewport.width / camera.scale;
+  const height = viewport.height / camera.scale;
+  return { x: camera.centreX - width / 2, y: camera.centreY - height / 2, width, height };
+}
+
+function union(a: Rect, b: Rect): Rect {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+}
+
+/**
+ * Split a tour into stretches that one image each can show: every view of a
+ * stretch lies inside its image, shown at most IMAGE_ZOOM_STEP times smaller
+ * than rendered (never enlarged, so never blurry). Rendering these few images
+ * replaces rendering every frame.
+ */
+export function planImages(stops: TourStop[], piece: Size, viewport: Size, seconds: number): TourImage[] {
+  const samples = Math.max(2, Math.ceil(seconds * PLAN_SAMPLES_PER_SECOND));
+  const budget = IMAGE_SCREENS * viewport.width * viewport.height;
+  const images: (TourImage & { smallest: number })[] = [];
+  for (let sample = 0; sample <= samples; sample++) {
+    const progress = sample / samples;
+    const camera = cameraAt(stops, piece, viewport, progress);
+    const view = viewRect(camera, viewport);
+    const current = images.at(-1);
+    if (current) {
+      const area = union(current.area, view);
+      const scale = Math.max(current.scale, camera.scale);
+      const smallest = Math.min(current.smallest, camera.scale);
+      if (scale / smallest <= IMAGE_ZOOM_STEP && area.width * area.height * scale * scale <= budget) {
+        Object.assign(current, { area, scale, smallest, to: progress });
+        continue;
+      }
+      current.to = progress;
+    }
+    images.push({ from: progress, to: progress, area: view, scale: camera.scale, smallest: camera.scale });
+  }
+  images[images.length - 1].to = 1;
+  return images.map(({ from, to, area, scale }) => {
+    const marginX = area.width * IMAGE_MARGIN;
+    const marginY = area.height * IMAGE_MARGIN;
+    const x = Math.max(0, area.x - marginX);
+    const y = Math.max(0, area.y - marginY);
+    return {
+      from,
+      to,
+      scale: scale * (1 + IMAGE_MARGIN),
+      area: {
+        x,
+        y,
+        width: Math.min(piece.width, area.x + area.width + marginX) - x,
+        height: Math.min(piece.height, area.y + area.height + marginY) - y,
+      },
+    };
+  });
 }

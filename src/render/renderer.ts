@@ -1,4 +1,4 @@
-import { FRAGMENT_SHADER, VERTEX_SHADER } from './shaders';
+import { FRAGMENT_SHADER, IMAGE_FRAGMENT_SHADER, VERTEX_SHADER } from './shaders';
 import { hexToRgb, ZARI_COLOUR } from '../palettes/presets';
 import type { RenderMode, RenderSettings } from '../core/design';
 import type { Grid } from '../core/compose';
@@ -72,12 +72,29 @@ export interface Frame {
 export class WebGLUnavailableError extends Error {}
 
 /** Draws a design grid as woven double-ikat cloth with WebGL2. */
+/** Part of the piece rendered once into a texture, to show again and again (see renderImage). */
+export interface RenderedImage {
+  /** Piece area shown, in threads. */
+  area: Rect;
+  width: number;
+  height: number;
+  /** Rows rendered so far (rendering is spread over several calls). */
+  rowsDone: number;
+  /** The weave context it belongs to; images don't survive a lost context. */
+  generation: number;
+  texture: WebGLTexture;
+  framebuffer: WebGLFramebuffer;
+}
+
 export class PatolaRenderer {
   private gl: WebGL2RenderingContext;
   private program!: WebGLProgram;
+  private imageProgram!: WebGLProgram;
   private vertexArray!: WebGLVertexArrayObject;
+  /** Increases when the context is restored after a loss, which drops all textures. */
+  private generation = 0;
   private gridTexture!: WebGLTexture;
-  private uniformLocations = new Map<string, WebGLUniformLocation | null>();
+  private uniformLocations = new Map<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
   private uploadedGrid: Grid | null = null;
   private lastFrame: Frame | null = null;
 
@@ -97,15 +114,16 @@ export class PatolaRenderer {
     canvas.addEventListener('webglcontextrestored', () => {
       this.uniformLocations.clear();
       this.uploadedGrid = null;
+      this.generation++;
       this.createResources();
       if (this.lastFrame) this.draw(this.lastFrame);
     });
   }
 
-  private createResources(): void {
+  private link(fragmentSource: string): WebGLProgram {
     const gl = this.gl;
     const vertexShader = this.compile(gl.VERTEX_SHADER, VERTEX_SHADER);
-    const fragmentShader = this.compile(gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    const fragmentShader = this.compile(gl.FRAGMENT_SHADER, fragmentSource);
     const program = gl.createProgram()!;
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
@@ -114,7 +132,13 @@ export class PatolaRenderer {
       throw new Error(`Shader link failed: ${gl.getProgramInfoLog(program)}`);
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
-    this.program = program;
+    return program;
+  }
+
+  private createResources(): void {
+    const gl = this.gl;
+    this.program = this.link(FRAGMENT_SHADER);
+    this.imageProgram = this.link(IMAGE_FRAGMENT_SHADER);
     this.vertexArray = gl.createVertexArray()!;
     this.gridTexture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, this.gridTexture);
@@ -135,10 +159,11 @@ export class PatolaRenderer {
     return shader;
   }
 
-  private uniform(name: string): WebGLUniformLocation | null {
-    if (!this.uniformLocations.has(name))
-      this.uniformLocations.set(name, this.gl.getUniformLocation(this.program, name));
-    return this.uniformLocations.get(name)!;
+  private uniform(name: string, program = this.program): WebGLUniformLocation | null {
+    let locations = this.uniformLocations.get(program);
+    if (!locations) this.uniformLocations.set(program, (locations = new Map()));
+    if (!locations.has(name)) locations.set(name, this.gl.getUniformLocation(program, name));
+    return locations.get(name)!;
   }
 
   private uploadGrid(grid: Grid): void {
@@ -162,14 +187,22 @@ export class PatolaRenderer {
 
   draw(frame: Frame): void {
     this.lastFrame = frame;
-    const gl = this.gl;
-    if (gl.isContextLost()) return;
-    const { view, render } = frame;
+    if (this.gl.isContextLost()) return;
+    this.resizeCanvas(frame.view);
+    this.gl.viewport(0, 0, frame.view.width, frame.view.height);
+    this.drawWeave(frame, false);
+  }
+
+  private resizeCanvas(view: View): void {
     if (this.canvas.width !== view.width) this.canvas.width = view.width;
     if (this.canvas.height !== view.height) this.canvas.height = view.height;
+  }
 
+  /** Draw the weave into the bound framebuffer, in sRGB or (for sRGB images) linear light. */
+  private drawWeave(frame: Frame, linearOutput: boolean): void {
+    const gl = this.gl;
+    const { view, render } = frame;
     this.uploadGrid(frame.grid);
-    gl.viewport(0, 0, view.width, view.height);
     gl.useProgram(this.program);
     gl.bindVertexArray(this.vertexArray);
     gl.activeTexture(gl.TEXTURE0);
@@ -200,7 +233,111 @@ export class PatolaRenderer {
     };
     gl.uniform3fv(this.uniform('uLight'), lampPosition(frame.lightArea ?? visible, render.light));
     gl.uniform1ui(this.uniform('uSeed'), frame.seed >>> 0);
+    gl.uniform1i(this.uniform('uLinearOutput'), linearOutput ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  /** Largest image side this GPU supports. */
+  maxImageSide(): number {
+    return this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE);
+  }
+
+  /** An empty image of `area` (threads) at width × height pixels; fill it with renderImage. */
+  createImage(area: Rect, width: number, height: number): RenderedImage {
+    const gl = this.gl;
+    const texture = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    const levels = Math.floor(Math.log2(Math.max(width, height))) + 1;
+    // sRGB storage: 8 bits where the eye needs them, and filtering in linear light.
+    gl.texStorage2D(gl.TEXTURE_2D, levels, gl.SRGB8_ALPHA8, width, height);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const framebuffer = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { area, width, height, rowsDone: 0, generation: this.generation, texture, framebuffer };
+  }
+
+  /** Whether an image can still be used (a lost context drops it). */
+  isImageValid(image: RenderedImage): boolean {
+    return image.generation === this.generation && !this.gl.isContextLost();
+  }
+
+  /**
+   * Render up to `maxPixels` more of an image (whole rows), so big images can be
+   * prepared a little per frame. Returns true once the image is complete.
+   */
+  renderImage(image: RenderedImage, frame: Omit<Frame, 'view'>, maxPixels: number): boolean {
+    const gl = this.gl;
+    if (image.rowsDone >= image.height) return true;
+    if (!this.isImageValid(image)) return false;
+    const rows = Math.min(image.height - image.rowsDone, Math.max(1, Math.floor(maxPixels / image.width)));
+    gl.bindFramebuffer(gl.FRAMEBUFFER, image.framebuffer);
+    gl.viewport(0, 0, image.width, image.height);
+    gl.enable(gl.SCISSOR_TEST);
+    // Rows count from the top of the area; the framebuffer's y runs bottom-up.
+    gl.scissor(0, image.height - image.rowsDone - rows, image.width, rows);
+    this.drawWeave(
+      {
+        ...frame,
+        view: {
+          width: image.width,
+          height: image.height,
+          originX: image.area.x,
+          originY: image.area.y,
+          scale: image.width / image.area.width,
+        },
+      },
+      true,
+    );
+    gl.disable(gl.SCISSOR_TEST);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    image.rowsDone += rows;
+    if (image.rowsDone < image.height) return false;
+    gl.bindTexture(gl.TEXTURE_2D, image.texture);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    return true;
+  }
+
+  /** Clear the canvas to `background` at the view's size. */
+  clear(view: View, background: string): void {
+    const gl = this.gl;
+    if (gl.isContextLost()) return;
+    this.resizeCanvas(view);
+    gl.viewport(0, 0, view.width, view.height);
+    const [red, green, blue] = hexToRgb(background);
+    gl.clearColor(red / 255, green / 255, blue / 255, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  /** Show a complete image in the view, blended over what is there; parts it doesn't cover stay. */
+  drawImage(image: RenderedImage, view: View, opacity = 1): void {
+    const gl = this.gl;
+    if (!this.isImageValid(image)) return;
+    const program = this.imageProgram;
+    gl.useProgram(program);
+    gl.bindVertexArray(this.vertexArray);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, image.texture);
+    gl.uniform1i(this.uniform('uImage', program), 0);
+    gl.uniform4f(this.uniform('uArea', program), image.area.x, image.area.y, image.area.width, image.area.height);
+    gl.uniform2f(this.uniform('uViewSize', program), view.width, view.height);
+    gl.uniform2f(this.uniform('uOrigin', program), view.originX, view.originY);
+    gl.uniform1f(this.uniform('uScale', program), view.scale);
+    gl.uniform1f(this.uniform('uOpacity', program), opacity);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disable(gl.BLEND);
+  }
+
+  deleteImage(image: RenderedImage): void {
+    if (!this.isImageValid(image)) return;
+    this.gl.deleteFramebuffer(image.framebuffer);
+    this.gl.deleteTexture(image.texture);
   }
 
   /** Pixels of the last draw as RGBA, top row first. Call right after draw(). */

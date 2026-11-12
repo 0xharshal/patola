@@ -24,6 +24,7 @@
     onresize,
     gpu = 'default',
     ongpu,
+    draw,
   }: {
     /** Everything to draw except the view, which this component owns. */
     frame: Omit<Frame, 'view' | 'background'>;
@@ -40,6 +41,8 @@
     gpu?: WebGLPowerPreference;
     /** Called with the name of the graphics card that draws. */
     ongpu?: (name: string) => void;
+    /** Draw the frame some other way (exhibition images) instead of rendering the weave. */
+    draw?: (renderer: PatolaRenderer, frame: Frame) => void;
   } = $props();
 
   function renderPixelRatio(): number {
@@ -83,7 +86,10 @@
   });
 
   $effect(() => {
-    renderer?.draw({ ...frame, background, view: viewFor(shownCamera, viewport) });
+    if (!renderer) return;
+    const full: Frame = { ...frame, background, view: viewFor(shownCamera, viewport) };
+    if (draw) draw(renderer, full);
+    else renderer.draw(full);
   });
 
   function readBackground() {

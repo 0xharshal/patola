@@ -29,14 +29,18 @@ decisions: [PLAN.md](PLAN.md).
   always filling the screen with cloth; then the next design fades in, with a
   caption about it. Choose what changes between designs, the time per design,
   close-ups and captions. Space pauses, arrow keys skip, F toggles full screen, Esc
-  ends it; the screen stays on while it runs. It draws every screen pixel, so a 4K
-  screen shows a 4K picture.
+  ends it. It keeps the screen on, which browsers allow only on `https://` pages (or
+  `localhost`); elsewhere it says so. By default it shows prerendered images: each
+  stretch of the tour is rendered once at full screen resolution and then only
+  moved and scaled, so phones and slow graphics keep up. A 4K screen shows a 4K
+  picture.
 - **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
   a photo, and palettes saved in your browser.
 - **Advanced** (panel section, kept in this browser, not in links): which graphics
   card to ask for (fastest or power saving; the browser and system decide, so the
-  section shows the card actually drawing) and the exhibition frame rate (30 per
-  second by default, which halves the work on slower graphics). If the browser
+  section shows the card actually drawing), how the exhibition draws (prerendered
+  images, or every frame anew, where the sheen follows the camera but the graphics
+  work far harder) and its frame rate (30 per second by default). If the browser
   ignores the choice, pick the card for the browser in the system settings; on
   Linux, e.g. start it with `DRI_PRIME=1`.
 - **Learn**: a short guide to patola and double ikat. Its buttons show what it

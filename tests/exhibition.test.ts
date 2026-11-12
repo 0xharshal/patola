@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cameraAt, gridInterest, planTour, zoomMove } from '../src/exhibition/tour';
+import { cameraAt, gridInterest, planImages, planTour, zoomMove } from '../src/exhibition/tour';
 import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
 import { defaultDesign } from '../src/core/design';
@@ -192,5 +192,45 @@ describe('exhibition designs', () => {
       ...defaultParams(EXHIBITION_SCHEMA),
       seconds: 15,
     });
+  });
+});
+
+describe('exhibition images', () => {
+  it('cover the tour with images that hold every view, sharp and not too large', () => {
+    const screen = { width: 1920, height: 1080 };
+    for (const shape of [piece, { width: 9000, height: 700 }, { width: 900, height: 900 }]) {
+      for (const seconds of [15, 60]) {
+        const stops = planTour({
+          piece: shape,
+          viewport: screen,
+          pixelRatio: 1,
+          closeups: true,
+          seconds,
+          random: mulberry32(seconds),
+        });
+        const images = planImages(stops, shape, screen, seconds);
+        expect(images[0].from).toBe(0);
+        expect(images.at(-1)!.to).toBe(1);
+        // Far fewer pictures to render than frames to draw.
+        expect(images.length).toBeLessThan(seconds * 30 * 0.1);
+        for (let frame = 0; frame <= seconds * 30; frame++) {
+          const progress = frame / (seconds * 30);
+          const image = images.find((candidate) => progress <= candidate.to)!;
+          const camera = cameraAt(stops, shape, screen, progress);
+          const halfWidth = screen.width / 2 / camera.scale;
+          const halfHeight = screen.height / 2 / camera.scale;
+          expect(camera.centreX - halfWidth).toBeGreaterThanOrEqual(image.area.x - 1e-6);
+          expect(camera.centreX + halfWidth).toBeLessThanOrEqual(image.area.x + image.area.width + 1e-6);
+          expect(camera.centreY - halfHeight).toBeGreaterThanOrEqual(image.area.y - 1e-6);
+          expect(camera.centreY + halfHeight).toBeLessThanOrEqual(image.area.y + image.area.height + 1e-6);
+          expect(camera.scale).toBeLessThanOrEqual(image.scale + 1e-9);
+          expect(image.scale / camera.scale).toBeLessThanOrEqual(Math.SQRT2 * 1.03);
+        }
+        for (const image of images)
+          expect(image.area.width * image.area.height * image.scale ** 2).toBeLessThanOrEqual(
+            3.3 * screen.width * screen.height,
+          );
+      }
+    }
   });
 });

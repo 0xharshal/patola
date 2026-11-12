@@ -6,7 +6,9 @@
   import type { Design } from '../core/design';
   import type { Params } from '../core/params';
   import { mulberry32 } from '../core/rng';
-  import { cameraAt, gridInterest, planTour } from '../exhibition/tour';
+  import { cameraAt, gridInterest, planImages, planTour } from '../exhibition/tour';
+  import { TourPictures } from '../exhibition/pictures';
+  import type { PatolaRenderer } from '../render/renderer';
   import { exhibitionSettings, nextDesign } from '../exhibition/settings';
   import { getGenerator } from '../generators/registry';
   import { getLayout, patternOnly } from '../layouts/registry';
@@ -24,6 +26,7 @@
     settings,
     gpu,
     fps,
+    drawing,
     onExit,
   }: {
     design: Design;
@@ -35,6 +38,8 @@
     gpu: WebGLPowerPreference;
     /** Redraws per second. */
     fps: number;
+    /** Show prerendered images of the tour, or render every frame. */
+    drawing: 'images' | 'live';
     /** Back to the editor, with the design on show. */
     onExit: () => void;
   } = $props();
@@ -70,6 +75,20 @@
       interest: gridInterest(frame.grid, frame.render.step),
     }),
   );
+  const imagePlan = $derived(drawing === 'images' ? planImages(tour, pieceThreads, viewport, options.seconds) : []);
+  let pictures: TourPictures | null = null;
+
+  function drawPictures(renderer: PatolaRenderer, shown: Frame) {
+    if (pictures?.renderer !== renderer) {
+      pictures?.dispose();
+      pictures = new TourPictures(renderer);
+    }
+    // One lamp over the opening view for the whole tour, so the images match each other.
+    const progress = Math.min(1, elapsed / options.seconds);
+    pictures.draw(shown, imagePlan, progress, options.seconds, imagePlan[0].area);
+  }
+  onMount(() => () => pictures?.dispose());
+
   const camera = $derived(cameraAt(tour, pieceThreads, viewport, elapsed / options.seconds));
   const opacity = $derived(
     Math.max(0, Math.min(1, elapsed / FADE_SECONDS, (options.seconds - elapsed) / FADE_SECONDS)),
@@ -128,23 +147,34 @@
     return () => cancelAnimationFrame(frameId);
   });
 
-  // Keep the screen on while the exhibition runs (where the browser allows it).
+  /**
+   * Keep the screen on while the exhibition runs. Browsers allow it only on secure
+   * pages (https or localhost) and drop it when the page is hidden, so it is asked
+   * for again when the page shows or is touched; `screenStaysOn` tells the viewer.
+   */
+  let screenStaysOn: boolean | null = $state(null);
+  let wakeLock: WakeLockSentinel | null = null;
+  async function keepScreenOn() {
+    if (document.visibilityState !== 'visible' || (wakeLock && !wakeLock.released)) return;
+    if (!('wakeLock' in navigator)) {
+      screenStaysOn = false;
+      return;
+    }
+    wakeLock = await navigator.wakeLock.request('screen').catch(() => null);
+    screenStaysOn = wakeLock !== null;
+  }
   onMount(() => {
-    let lock: WakeLockSentinel | null = null;
-    const acquire = async () => {
-      if (document.visibilityState !== 'visible' || !('wakeLock' in navigator)) return;
-      lock = await navigator.wakeLock.request('screen').catch(() => null);
-    };
-    void acquire();
-    document.addEventListener('visibilitychange', acquire);
+    void keepScreenOn();
+    document.addEventListener('visibilitychange', keepScreenOn);
     return () => {
-      document.removeEventListener('visibilitychange', acquire);
-      void lock?.release().catch(() => {});
+      document.removeEventListener('visibilitychange', keepScreenOn);
+      void wakeLock?.release().catch(() => {});
     };
   });
 
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   function showControls() {
+    void keepScreenOn();
     controlsVisible = true;
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => (controlsVisible = false), IDLE_MS);
@@ -202,6 +232,7 @@
       interactive={false}
       {camera}
       {gpu}
+      draw={drawing === 'images' ? drawPictures : undefined}
       onresize={(size, ratio) => {
         viewport = size;
         pixelRatio = ratio;
@@ -226,6 +257,13 @@
     {/if}
     <button onclick={exit} title="Back to the editor with this design">Edit this design</button>
   </div>
+  {#if screenStaysOn === false}
+    <p class="warning" class:visible={controlsVisible || paused}>
+      {window.isSecureContext
+        ? 'This browser may let the screen turn off during the exhibition.'
+        : 'The screen may turn off: browsers keep it on only for secure (https://) pages.'}
+    </p>
+  {/if}
 </div>
 
 <style>
@@ -282,6 +320,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
+    width: max-content;
     max-width: calc(100vw - 32px);
     padding: 6px;
     border-radius: 999px;
@@ -306,6 +345,27 @@
   }
   .controls button:hover:not(:disabled) {
     background: rgb(255 255 255 / 0.12);
+  }
+  .warning {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 0;
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: rgb(12 11 10 / 0.72);
+    text-align: center;
+    font-size: 0.85rem;
+    color: #e8c37a;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .warning.visible {
+    opacity: 1;
   }
   .controls button:disabled {
     opacity: 0.4;

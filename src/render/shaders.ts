@@ -57,6 +57,7 @@ uniform float uWeftJitter;
 uniform float uSheen;
 uniform float uTexture;       // yarn texture strength
 uniform vec3 uLight;          // lamp position: piece position (threads) and height above the cloth
+uniform bool uLinearOutput;   // write linear light (into an sRGB image, which encodes it) instead of sRGB
 uniform uint uSeed;
 
 out vec4 outColor;
@@ -315,12 +316,49 @@ void main() {
       sum += inside ? weave(piece) : uBackground;
     }
   }
-  vec3 colour = linearToSrgb(sum / float(uSamples * uSamples));
+  vec3 linear = sum / float(uSamples * uSamples);
+  if (uLinearOutput) {
+    outColor = vec4(linear, 1.0);
+    return;
+  }
+  vec3 colour = linearToSrgb(linear);
   if (uMode != 0) {
     // Dither by half a step so smooth shading doesn't band on 8-bit output (tied to the piece, not the screen).
     vec2 piecePixel = floor((uOrigin + pixel / uScale) * uScale);
     colour += (random(int(piecePixel.x), int(piecePixel.y), 81u) - 0.5) / 255.0;
   }
   outColor = vec4(colour, 1.0);
+}
+`;
+
+/**
+ * Shows a prerendered image of part of the piece (exhibition image mode): maps
+ * each pixel to the piece like the weave shader does and looks it up in the
+ * image. The image is sRGB, so sampling and mipmaps blend in linear light.
+ */
+export const IMAGE_FRAGMENT_SHADER = /* glsl */ `#version 300 es
+precision highp float;
+
+uniform sampler2D uImage;
+uniform vec4 uArea;       // part of the piece the image shows: x, y, width, height (threads)
+uniform vec2 uViewSize;   // render target, px
+uniform vec2 uOrigin;     // piece position (threads) at the top-left pixel
+uniform float uScale;     // pixels per thread
+uniform float uOpacity;
+
+out vec4 outColor;
+
+vec3 linearToSrgb(vec3 linear) {
+  linear = clamp(linear, 0.0, 1.0);
+  return mix(linear * 12.92, 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, linear));
+}
+
+void main() {
+  vec2 pixel = vec2(gl_FragCoord.x, uViewSize.y - gl_FragCoord.y);
+  vec2 position = (uOrigin + pixel / uScale - uArea.xy) / uArea.zw;
+  if (any(lessThan(position, vec2(0.0))) || any(greaterThan(position, vec2(1.0)))) discard;
+  // The image's first row is the top of its area, stored last (images are bottom-up).
+  vec3 linear = texture(uImage, vec2(position.x, 1.0 - position.y)).rgb;
+  outColor = vec4(linearToSrgb(linear), uOpacity);
 }
 `;

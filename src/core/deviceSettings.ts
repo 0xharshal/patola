@@ -19,6 +19,17 @@ export const DEVICE_SCHEMA = [
     help: 'Web pages can only ask; the browser and system decide which card draws.',
   },
   {
+    key: 'exhibitionDrawing',
+    type: 'select',
+    label: 'Exhibition drawing',
+    default: 'images',
+    options: [
+      { value: 'images', label: 'Prerendered images (light work, for any device)' },
+      { value: 'live', label: 'Draw every frame (sheen follows the camera; needs fast graphics)' },
+    ],
+    help: 'Images: each part of the tour is rendered once in high resolution and then only moved and scaled, so phones and slow graphics keep up. Drawing every frame renders the cloth anew all the time.',
+  },
+  {
     key: 'fps',
     type: 'select',
     label: 'Exhibition frame rate',

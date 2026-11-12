@@ -14,14 +14,14 @@ describe('device settings', () => {
   });
 
   it('fall back to defaults without storage', () => {
-    expect(loadDeviceSettings()).toEqual({ gpu: 'default', fps: '30' });
+    expect(loadDeviceSettings()).toEqual({ gpu: 'default', exhibitionDrawing: 'images', fps: '30' });
   });
 
   it('are kept, and bad stored values are replaced by defaults', () => {
     Object.assign(globalThis, { localStorage: memoryStorage });
-    saveDeviceSettings({ gpu: 'high-performance', fps: '60' });
-    expect(loadDeviceSettings()).toEqual({ gpu: 'high-performance', fps: '60' });
+    saveDeviceSettings({ gpu: 'high-performance', exhibitionDrawing: 'live', fps: '60' });
+    expect(loadDeviceSettings()).toEqual({ gpu: 'high-performance', exhibitionDrawing: 'live', fps: '60' });
     store.set('patola.device.v1', JSON.stringify({ gpu: 'nvidia-only', fps: 1000 }));
-    expect(loadDeviceSettings()).toEqual({ gpu: 'default', fps: '30' });
+    expect(loadDeviceSettings()).toEqual({ gpu: 'default', exhibitionDrawing: 'images', fps: '30' });
   });
 });

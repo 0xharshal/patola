@@ -245,6 +245,7 @@
           settings={exhibition}
           gpu={device.gpu}
           fps={Number(device.fps)}
+          drawing={device.exhibitionDrawing}
           onExit={() => (view = 'editor')}
         />
       {/await}
