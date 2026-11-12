@@ -4,8 +4,20 @@ import { typedParams, type ParamSchema, type ParamValues, type Params } from '..
 import { MAX_SEED, type Rng } from '../core/rng';
 import { randomizeColours, randomizePattern, surprise } from '../core/randomize';
 import { LAYOUTS } from '../layouts/registry';
+import type { LayoutDef } from '../layouts/types';
 
 export const EXHIBITION_SCHEMA = [
+  {
+    key: 'style',
+    type: 'select',
+    label: 'Style',
+    default: 'gallery',
+    options: [
+      { value: 'gallery', label: 'One design at a time' },
+      { value: 'fabric', label: 'Endless fabric' },
+    ],
+    help: 'One design at a time: the camera tours each design, then the next fades in. Endless fabric: many designs side by side glide past, now one way, now another.',
+  },
   {
     key: 'vary',
     type: 'select',
@@ -44,8 +56,16 @@ export function exhibitionSettings(values: Params): ExhibitionSettings {
   return typedParams(EXHIBITION_SCHEMA, values);
 }
 
-/** The design after `design`: a copy, changed as the settings say. Same `random`, same design. */
-export function nextDesign(design: Design, vary: ExhibitionSettings['vary'], random: Rng): Design {
+/**
+ * The design after `design`: a copy, changed as the settings say. Same `random`,
+ * same design. "Anything new" picks one of `layouts`.
+ */
+export function nextDesign(
+  design: Design,
+  vary: ExhibitionSettings['vary'],
+  random: Rng,
+  layouts: readonly LayoutDef[] = LAYOUTS,
+): Design {
   const next: Design = JSON.parse(JSON.stringify(design));
   if (vary === 'none') return next;
   if (vary === 'colours') {
@@ -54,7 +74,7 @@ export function nextDesign(design: Design, vary: ExhibitionSettings['vary'], ran
     randomizePattern(next, random);
     for (const fill of Object.values(next.zones)) randomizePattern(fill, random);
   } else {
-    applyLayout(next, LAYOUTS[Math.floor(random() * LAYOUTS.length)].id);
+    applyLayout(next, layouts[Math.floor(random() * layouts.length)].id);
     surprise(next, [], random);
   }
   next.seed = Math.floor(random() * (MAX_SEED + 1));

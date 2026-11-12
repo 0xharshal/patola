@@ -10,13 +10,17 @@
   import { TourPictures } from '../exhibition/pictures';
   import type { PatolaRenderer } from '../render/renderer';
   import { exhibitionSettings, nextDesign } from '../exhibition/settings';
+  import { fabricCentre, fabricSpeed, panelSize } from '../exhibition/fabric';
+  import { FabricPanels } from '../exhibition/fabricPanels';
+  import { viewFor, type Camera } from '../render/camera';
   import { getGenerator } from '../generators/registry';
   import { getLayout, patternOnly } from '../layouts/registry';
   import { getPalette } from '../palettes/presets';
 
   /**
-   * Full-screen slideshow, like an exhibition display: the camera tours each
-   * design (whole piece, motifs, threads), then it fades to the next design.
+   * Full-screen slideshow, like an exhibition display. Gallery style: the camera
+   * tours each design (whole piece, motifs, threads), then it fades to the next.
+   * Fabric style: an endless patchwork of designs glides past.
    */
   let {
     design = $bindable(),
@@ -48,6 +52,10 @@
   /** Controls and the pointer hide after this long without movement. */
   const IDLE_MS = 3000;
   const MAX_HISTORY = 50;
+  /** Endless fabric: CSS pixels per thread, close enough to see the weave and wide enough for whole motifs. */
+  const FABRIC_SCALE = 3;
+  /** Endless fabric: how far ahead (seconds) panels are prepared, nearest first. */
+  const FABRIC_LOOKAHEAD_SECONDS = [2, 5, 9, 14];
 
   const options = $derived(exhibitionSettings(settings));
   let viewport: Size = $state({ width: 1, height: 1 });
@@ -64,18 +72,25 @@
   /** Designs dropped from the start of a full history: `dropped + shown` numbers designs without repeats. */
   let dropped = $state(0);
 
+  const isFabric = $derived(options.style === 'fabric');
+
+  // The camera tour of one design at a time (the endless fabric has its own path).
   const tour = $derived(
-    planTour({
-      piece: pieceThreads,
-      viewport,
-      pixelRatio,
-      closeups: options.closeups,
-      seconds: options.seconds,
-      random: mulberry32(design.seed + dropped + shown),
-      interest: gridInterest(frame.grid, frame.render.step),
-    }),
+    isFabric
+      ? []
+      : planTour({
+          piece: pieceThreads,
+          viewport,
+          pixelRatio,
+          closeups: options.closeups,
+          seconds: options.seconds,
+          random: mulberry32(design.seed + dropped + shown),
+          interest: gridInterest(frame.grid, frame.render.step),
+        }),
   );
-  const imagePlan = $derived(drawing === 'images' ? planImages(tour, pieceThreads, viewport, options.seconds) : []);
+  const imagePlan = $derived(
+    drawing === 'images' && !isFabric ? planImages(tour, pieceThreads, viewport, options.seconds) : [],
+  );
   let pictures: TourPictures | null = null;
 
   function drawPictures(renderer: PatolaRenderer, shown: Frame) {
@@ -87,11 +102,39 @@
     const progress = Math.min(1, elapsed / options.seconds);
     pictures.draw(shown, imagePlan, progress, options.seconds, imagePlan[0].area);
   }
-  onMount(() => () => pictures?.dispose());
 
-  const camera = $derived(cameraAt(tour, pieceThreads, viewport, elapsed / options.seconds));
+  // Endless fabric: panels of single-pattern designs around the one on show, gliding by.
+  const fabricBase: Design = JSON.parse(JSON.stringify(design));
+  const fabricScale = $derived(FABRIC_SCALE * pixelRatio);
+  const fabricPanel = $derived(panelSize(viewport, fabricScale, frame.render.step));
+  const fabricThreadsPerSecond = $derived(fabricSpeed(viewport, fabricScale));
+  let panels: FabricPanels | null = null;
+
+  function fabricCamera(seconds: number): Camera {
+    const [centreX, centreY] = fabricCentre(seconds, fabricThreadsPerSecond, fabricBase.seed);
+    // Start in the middle of the first panel (the design on show).
+    return { centreX: centreX + fabricPanel / 2, centreY: centreY + fabricPanel / 2, scale: fabricScale };
+  }
+
+  function drawFabric(renderer: PatolaRenderer, shown: Frame) {
+    if (panels?.renderer !== renderer || panels.panel !== fabricPanel || panels.scale !== fabricScale) {
+      panels?.dispose();
+      panels = new FabricPanels(renderer, fabricBase, options.vary, fabricPanel, fabricScale);
+    }
+    // Where the cloth will be in the next seconds (turns included), so those panels get prepared.
+    const upcoming = FABRIC_LOOKAHEAD_SECONDS.map((ahead) => viewFor(fabricCamera(elapsed + ahead), viewport));
+    panels.draw(shown.view, shown.background, upcoming);
+  }
+  onMount(() => () => {
+    pictures?.dispose();
+    panels?.dispose();
+  });
+
+  const camera = $derived(
+    isFabric ? fabricCamera(elapsed) : cameraAt(tour, pieceThreads, viewport, elapsed / options.seconds),
+  );
   const opacity = $derived(
-    Math.max(0, Math.min(1, elapsed / FADE_SECONDS, (options.seconds - elapsed) / FADE_SECONDS)),
+    Math.max(0, Math.min(1, elapsed / FADE_SECONDS, isFabric ? 1 : (options.seconds - elapsed) / FADE_SECONDS)),
   );
 
   const caption = $derived.by(() => {
@@ -140,7 +183,7 @@
       last = now;
       if (!paused) {
         elapsed += seconds;
-        if (elapsed >= options.seconds) go(1);
+        if (!isFabric && elapsed >= options.seconds) go(1);
       }
     };
     frameId = requestAnimationFrame(tick);
@@ -197,6 +240,8 @@
   }
 
   function exit() {
+    // Endless fabric: edit the design in the middle of the screen.
+    if (isFabric && panels) design = panels.designAt(camera.centreX, camera.centreY);
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     onExit();
   }
@@ -204,8 +249,8 @@
   function onKeydown(event: KeyboardEvent) {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === ' ') paused = !paused;
-    else if (event.key === 'ArrowRight') go(1);
-    else if (event.key === 'ArrowLeft') go(-1);
+    else if (event.key === 'ArrowRight' && !isFabric) go(1);
+    else if (event.key === 'ArrowLeft' && !isFabric) go(-1);
     else if (event.key === 'f') toggleFullscreen();
     // In full screen the browser takes Escape to leave full screen first.
     else if (event.key === 'Escape') exit();
@@ -232,7 +277,7 @@
       interactive={false}
       {camera}
       {gpu}
-      draw={drawing === 'images' ? drawPictures : undefined}
+      draw={isFabric ? drawFabric : drawing === 'images' ? drawPictures : undefined}
       onresize={(size, ratio) => {
         viewport = size;
         pixelRatio = ratio;
@@ -240,7 +285,7 @@
     />
   </div>
 
-  {#if options.captions}
+  {#if options.captions && !isFabric}
     <div class="caption" class:visible={captionVisible} aria-live="polite">
       <h2>{caption.title}</h2>
       <p class="colours">{caption.colours}</p>
@@ -249,9 +294,13 @@
   {/if}
 
   <div class="controls" class:visible={controlsVisible || paused} role="toolbar" aria-label="Exhibition">
-    <button onclick={() => go(-1)} disabled={shown === 0}>Previous</button>
+    {#if !isFabric}
+      <button onclick={() => go(-1)} disabled={shown === 0}>Previous</button>
+    {/if}
     <button onclick={() => (paused = !paused)} aria-pressed={paused}>{paused ? 'Play' : 'Pause'}</button>
-    <button onclick={() => go(1)}>Next</button>
+    {#if !isFabric}
+      <button onclick={() => go(1)}>Next</button>
+    {/if}
     {#if document.fullscreenEnabled}
       <button onclick={toggleFullscreen}>{fullscreen ? 'Leave full screen' : 'Full screen'}</button>
     {/if}

@@ -23,17 +23,20 @@ decisions: [PLAN.md](PLAN.md).
   silk filaments, uneven threads, sheen). Zoom in close to see the threads.
   _Light from_ places the lamp; the silk reflects it, so the sheen moves with it
   and slides over the threads as you move around the cloth.
-- **Exhibition** (panel section): a full-screen slideshow for a large screen. The
-  camera drifts slowly along the piece and zooms calmly in to the motifs and down to
-  single threads (shorter times per design zoom less deep, so nothing moves faster),
-  always filling the screen with cloth; then the next design fades in, with a
-  caption about it. Choose what changes between designs, the time per design,
+- **Exhibition** (panel section): a full-screen slideshow for a large screen, in two
+  styles. _One design at a time_: the camera drifts slowly along the piece and zooms
+  calmly in to the motifs and down to single threads (shorter times per design zoom
+  less deep, so nothing moves faster), always filling the screen with cloth; then
+  the next design fades in, with a caption about it. _Endless fabric_: a patchwork
+  of many designs, one screen tall each, glides past without end, turning now left,
+  now right, up or down; _Edit this design_ opens the one in the middle. Choose what
+  changes between designs, and for one design at a time the time per design,
   close-ups and captions. Space pauses, arrow keys skip, F toggles full screen, Esc
   ends it. It keeps the screen on, which browsers allow only on `https://` pages (or
   `localhost`); elsewhere it says so. By default it shows prerendered images: each
-  stretch of the tour is rendered once at full screen resolution and then only
-  moved and scaled, so phones and slow graphics keep up. A 4K screen shows a 4K
-  picture.
+  stretch of the tour, or each panel of the fabric, is rendered once at full screen
+  resolution and then only moved and scaled, so phones and slow graphics keep up. A
+  4K screen shows a 4K picture.
 - **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
   a photo, and palettes saved in your browser.
 - **Advanced** (panel section, kept in this browser, not in links): which graphics
@@ -169,6 +172,7 @@ generator. The address bar updates as you edit. Invalid values are ignored.
 | `light`                                 | `315`                                                                                                                                   | Where the light comes from, in degrees (0 top, 90 right, …)                                                                                                                                              |
 | `threads`                               | `both`, `warp`, `weft`                                                                                                                  | Show the woven cloth or one set of dyed threads                                                                                                                                                          |
 | `view`                                  | `wallpaper`, `exhibition`                                                                                                               | Full-screen picture without controls, or the exhibition slideshow                                                                                                                                        |
+| `x.style`                               | `gallery`, `fabric`                                                                                                                     | Exhibition: one design at a time, or the endless fabric                                                                                                                                                  |
 | `x.vary`                                | `all`, `pattern`, `colours`, `none`                                                                                                     | Exhibition: what changes from one design to the next                                                                                                                                                     |
 | `x.seconds`, `x.closeups`, `x.captions` | `60`, `1`, `1`                                                                                                                          | Exhibition: seconds per design (15–600), close-ups of the threads, captions                                                                                                                              |
 | `random`                                | `pattern,colours,seed` or `all`                                                                                                         | Re-roll these on every load (great with `view=wallpaper`)                                                                                                                                                |

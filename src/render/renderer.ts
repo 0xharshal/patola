@@ -313,8 +313,12 @@ export class PatolaRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  /** Show a complete image in the view, blended over what is there; parts it doesn't cover stay. */
-  drawImage(image: RenderedImage, view: View, opacity = 1): void {
+  /**
+   * Show a complete image in the view, blended over what is there; parts it
+   * doesn't cover stay. `at`: where the image's area starts in the view's
+   * coordinates (default: its own area), e.g. a fabric panel far from the origin.
+   */
+  drawImage(image: RenderedImage, view: View, opacity = 1, at: { x: number; y: number } = image.area): void {
     const gl = this.gl;
     if (!this.isImageValid(image)) return;
     const program = this.imageProgram;
@@ -323,9 +327,11 @@ export class PatolaRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, image.texture);
     gl.uniform1i(this.uniform('uImage', program), 0);
-    gl.uniform4f(this.uniform('uArea', program), image.area.x, image.area.y, image.area.width, image.area.height);
+    // Positions relative to the image, computed here in double precision: the GPU's floats
+    // would lose sub-pixel accuracy far from the origin.
+    gl.uniform4f(this.uniform('uArea', program), 0, 0, image.area.width, image.area.height);
     gl.uniform2f(this.uniform('uViewSize', program), view.width, view.height);
-    gl.uniform2f(this.uniform('uOrigin', program), view.originX, view.originY);
+    gl.uniform2f(this.uniform('uOrigin', program), view.originX - at.x, view.originY - at.y);
     gl.uniform1f(this.uniform('uScale', program), view.scale);
     gl.uniform1f(this.uniform('uOpacity', program), opacity);
     gl.enable(gl.BLEND);

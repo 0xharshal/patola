@@ -37,7 +37,9 @@ Don't repeat those here; link to them.
   (pure grid operations behind the editor).
 - `src/exhibition/` — the full-screen slideshow: `tour.ts` (camera stops, calm zoom moves
   that keep the screen full, and the plan of prerendered images; pure), `pictures.ts`
-  (renders, prepares ahead and crossfades those images), `settings.ts` (`EXHIBITION_SCHEMA`,
+  (renders, prepares ahead and crossfades those images), `fabric.ts` (endless fabric: the
+  gliding path, panel layout and designs; pure) and `fabricPanels.ts` (its panel images),
+  `settings.ts` (`EXHIBITION_SCHEMA`,
   `x.` in URLs, and the next design); the UI is `src/app/Exhibition.svelte`.
 - `src/education/guide.ts` — the Learn guide (technique texts; motif/layout texts come from their definitions) and its actions.
 - `src/palettes/` — presets, random palettes, `extract.ts` (k-means quantising).

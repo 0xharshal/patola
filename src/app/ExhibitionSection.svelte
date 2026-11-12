@@ -12,6 +12,8 @@
   }: { exhibition: Params; onStart: () => void; onCopyLink: () => Promise<boolean> } = $props();
 
   let copied = $state(false);
+  /** Settings only the one-design-at-a-time style uses. */
+  const GALLERY_ONLY = new Set(['seconds', 'closeups', 'captions']);
 
   async function copyLink() {
     copied = await onCopyLink();
@@ -21,11 +23,15 @@
 
 <PanelSection title="Exhibition" open={false}>
   <p class="help">
-    A full-screen slideshow: the camera glides over each design, from the whole piece down to single threads, then the
-    next design fades in. Space pauses, arrow keys skip, Esc ends it.
+    A full-screen slideshow for a large screen: one design at a time, toured from the whole piece down to single
+    threads, or an endless fabric of many designs gliding past. Space pauses, arrow keys skip, Esc ends it.
   </p>
   {#each EXHIBITION_SCHEMA as def (def.key)}
-    <ParamControl {def} bind:value={exhibition[def.key]} />
+    <ParamControl
+      {def}
+      bind:value={exhibition[def.key]}
+      disabled={exhibition.style === 'fabric' && GALLERY_ONLY.has(def.key)}
+    />
   {/each}
   <div class="button-row">
     <button class="button primary" onclick={onStart}>Start exhibition</button>

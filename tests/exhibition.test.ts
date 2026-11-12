@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { cameraAt, gridInterest, planImages, planTour, zoomMove } from '../src/exhibition/tour';
 import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
-import { defaultDesign } from '../src/core/design';
+import { applyLayout, defaultDesign } from '../src/core/design';
+import { fabricCentre, fabricSpeed, panelDesign, panelsIn, panelSize } from '../src/exhibition/fabric';
 import { defaultParams } from '../src/core/params';
 import { mulberry32 } from '../src/core/rng';
 import { designToQuery, parseUrl } from '../src/core/url';
@@ -182,9 +183,15 @@ describe('exhibition designs', () => {
   });
 
   it('opens from a link with its settings', () => {
-    const state = parseUrl('?view=exhibition&x.vary=colours&x.seconds=90&x.closeups=0&gen=phool');
+    const state = parseUrl('?view=exhibition&x.style=fabric&x.vary=colours&x.seconds=90&x.closeups=0&gen=phool');
     expect(state.view).toBe('exhibition');
-    expect(state.exhibition).toEqual({ vary: 'colours', seconds: 90, closeups: false, captions: true });
+    expect(state.exhibition).toEqual({
+      style: 'fabric',
+      vary: 'colours',
+      seconds: 90,
+      closeups: false,
+      captions: true,
+    });
     const again = parseUrl(`?${designToQuery(state.design, 'exhibition', state.exhibition)}`);
     expect(again.view).toBe('exhibition');
     expect(again.exhibition).toEqual(state.exhibition);
@@ -232,5 +239,65 @@ describe('exhibition images', () => {
           );
       }
     }
+  });
+});
+
+describe('endless fabric', () => {
+  const screen = { width: 1920, height: 1080 };
+
+  it('glides at a calm speed, turning smoothly, never stopping or jumping', () => {
+    const speed = fabricSpeed(screen, 3);
+    const fps = 30;
+    let previous = fabricCentre(0, speed, 9);
+    let previousVelocity = [0, 0];
+    let fastest = 0;
+    let suddenest = 0;
+    const directions = new Set<string>();
+    for (let frame = 1; frame <= 600 * fps; frame++) {
+      const centre = fabricCentre(frame / fps, speed, 9);
+      const velocity = [(centre[0] - previous[0]) * fps, (centre[1] - previous[1]) * fps];
+      // Screen sizes per second, and its change per second.
+      const screens = (Math.hypot(velocity[0], velocity[1]) * 3) / screen.height;
+      fastest = Math.max(fastest, screens);
+      if (frame > 1)
+        suddenest = Math.max(
+          suddenest,
+          (Math.hypot(velocity[0] - previousVelocity[0], velocity[1] - previousVelocity[1]) * fps * 3) / screen.height,
+        );
+      if (frame > 10 * fps) expect(screens).toBeGreaterThan(0.03); // keeps moving once started
+      if (screens > 0.049)
+        directions.add(`${Math.sign(Math.round(velocity[0]))},${Math.sign(Math.round(velocity[1]))}`);
+      [previous, previousVelocity] = [centre, velocity];
+    }
+    expect(fastest).toBeLessThanOrEqual(0.0501);
+    expect(suddenest).toBeLessThan(0.02);
+    expect(directions.size).toBe(4); // left, right, up and down
+  });
+
+  it('lays out panels of whole cells around any area, also at negative positions', () => {
+    const panel = panelSize(screen, 3, 2);
+    expect(panel % 2).toBe(0);
+    expect(panel * 3).toBeCloseTo(screen.height, -1);
+    const panels = panelsIn(-panel * 0.5, panel * 1.5, panel * 2, panel, panel);
+    expect(panels).toEqual([
+      [-1, 1],
+      [0, 1],
+      [1, 1],
+      [-1, 2],
+      [0, 2],
+      [1, 2],
+    ]);
+  });
+
+  it('gives every panel its own single-pattern design, the same each time', () => {
+    const base = defaultDesign();
+    applyLayout(base, 'saree');
+    const first = panelDesign(base, 'all', 0, 0);
+    expect(first.layout).toBe('tile');
+    expect(first.generator).toBe(base.generator);
+    const other = panelDesign(base, 'all', 3, -2);
+    expect(other.layout).toBe('tile');
+    expect(other).toEqual(panelDesign(base, 'all', 3, -2));
+    expect(other).not.toEqual(panelDesign(base, 'all', -2, 3));
   });
 });
