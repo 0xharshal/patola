@@ -279,7 +279,6 @@
       onFocusZone={focusZone}
       onShowAll={() => viewportComponent?.fit()}
       onCopyLink={() => copyLink()}
-      onOpenWallpaper={() => window.open(linkFor('wallpaper'), '_blank', 'noopener')}
       onStartExhibition={startExhibition}
       onCopyExhibitionLink={() => copyLink('exhibition')}
       onExport={() => (openDialog = 'export')}

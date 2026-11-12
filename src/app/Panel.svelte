@@ -32,7 +32,6 @@
     onFocusZone,
     onShowAll,
     onCopyLink,
-    onOpenWallpaper,
     onStartExhibition,
     onCopyExhibitionLink,
     onExport,
@@ -54,7 +53,6 @@
     onFocusZone: (zoneId: string) => void;
     onShowAll: () => void;
     onCopyLink: () => Promise<boolean>;
-    onOpenWallpaper: () => void;
     onStartExhibition: () => void;
     onCopyExhibitionLink: () => Promise<boolean>;
     onExport: () => void;
@@ -66,7 +64,8 @@
 
   /** Phones only: how much of the screen the bottom sheet takes. */
   let sheet: 'half' | 'full' | 'hidden' = $state('half');
-  let copied = $state(false);
+  /** Which link was just copied, for a moment's feedback on its button. */
+  let copied: 'design' | 'exhibition' | null = $state(null);
   /** Palette slots kept when shuffling or randomising colours. */
   let locked: boolean[] = $state(Array(SLOT_COUNT).fill(false));
   let selectedZone = $state(BODY_ZONE);
@@ -83,9 +82,11 @@
     design.paletteId = null;
   }
 
-  async function copyLink() {
-    copied = await onCopyLink();
-    setTimeout(() => (copied = false), 1600);
+  async function copyLink(which: 'design' | 'exhibition') {
+    const done = await (which === 'design' ? onCopyLink() : onCopyExhibitionLink());
+    if (!done) return;
+    copied = which;
+    setTimeout(() => (copied = null), 1600);
   }
 </script>
 
@@ -148,15 +149,24 @@
 
     <WeaveSection bind:design />
 
-    <ExhibitionSection bind:exhibition onStart={onStartExhibition} onCopyLink={onCopyExhibitionLink} />
+    <ExhibitionSection bind:exhibition />
 
     <AdvancedSection bind:design bind:device {gpuName} {screenPixels} {pieceThreads} />
 
     <div class="actions">
       <button class="button primary" onclick={onExport}>Export…</button>
+      <button class="button primary" onclick={onStartExhibition}>Start exhibition</button>
       <FileButton label="Open design file…" accept=".json,application/json" onFile={onOpenDesignFile} />
-      <button class="button" onclick={copyLink}>{copied ? 'Link copied' : 'Copy link'}</button>
-      <button class="button" onclick={onOpenWallpaper}>Open as wallpaper</button>
+      <button class="button" onclick={() => copyLink('design')}
+        >{copied === 'design' ? 'Link copied' : 'Copy link'}</button
+      >
+      <button
+        class="button"
+        onclick={() => copyLink('exhibition')}
+        title="A link that opens straight into this exhibition, e.g. for a kiosk"
+      >
+        {copied === 'exhibition' ? 'Link copied' : 'Copy exhibition link'}
+      </button>
       {#if onInstall}
         <button class="button" onclick={onInstall} title="Use it like an app, also offline">Install app</button>
       {/if}

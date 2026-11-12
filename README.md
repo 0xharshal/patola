@@ -62,12 +62,13 @@ browser: no sign-up, nothing to install, and it works offline once opened.
 
 ### Exhibition
 
-Under _Exhibition_, choose a style and press _Start exhibition_:
+Press _Start exhibition_ (next to _Export…_). Its settings are under _Exhibition_,
+in two styles:
 
+- **Endless fabric** (the default): a patchwork of designs glides past, now left,
+  now right, up or down; each design fills the whole screen for a while.
 - **One design at a time**: the camera drifts calmly over each design and zooms
   in to the threads, then the next design fades in, with a short caption.
-- **Endless fabric**: a patchwork of designs glides past, now left, now right, up
-  or down; each design fills the whole screen for a while.
 
 Choose what changes from one design to the next and how long each stays. Space
 pauses, F switches full screen and Esc ends the exhibition; with one design at a

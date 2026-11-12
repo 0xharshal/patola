@@ -11,7 +11,7 @@ export const EXHIBITION_SCHEMA = [
     key: 'style',
     type: 'select',
     label: 'Style',
-    default: 'gallery',
+    default: 'fabric',
     options: [
       { value: 'gallery', label: 'One design at a time' },
       { value: 'fabric', label: 'Endless fabric' },

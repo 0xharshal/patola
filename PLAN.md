@@ -24,7 +24,7 @@ decisions, the core idea and the roadmap.
 | Views          | Whole-piece overview and zoom into any zone; pan, pinch, wheel zoom                        |
 | Devices        | Phone and tablet required                                                                  |
 | Sharing        | Whole design in the URL: share links and a wallpaper generator                             |
-| Exhibition     | Full-screen slideshow: camera tours each design, then the next fades in                    |
+| Exhibition     | Full-screen slideshow: an endless fabric of designs, or a camera tour of one at a time     |
 | Out of scope   | Gujarati UI labels, animated patterns, server-side rendering                               |
 | Stack          | Vite + TypeScript + Svelte 5, raw WebGL2, Vitest; tooling runs in a container              |
 
