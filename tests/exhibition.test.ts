@@ -189,6 +189,7 @@ describe('exhibition designs', () => {
     expect(state.exhibition).toEqual({
       style: 'fabric',
       speed: 0.05,
+      hold: 5,
       vary: 'colours',
       seconds: 90,
       closeups: false,
@@ -247,7 +248,7 @@ describe('exhibition images', () => {
 describe('endless fabric', () => {
   const screen = { width: 1920, height: 1080 };
   const scale = 3;
-  const motion = fabricMotion(screen, scale, 2, 0.05);
+  const motion = fabricMotion(screen, scale, 2, 0.05, 5);
   const fps = 30;
   /** Camera centres for `seconds` at 30 fps. */
   const path = (seconds: number, seed = 9) =>
@@ -274,22 +275,35 @@ describe('endless fabric', () => {
     expect(straight).toHaveLength(4);
   });
 
-  it('lets every design it passes fill the whole screen for at least five seconds', () => {
-    for (const seed of [1, 2, 3, 4, 5]) {
-      // Seconds each panel has filled the screen without a break, per visit.
-      const visits: { panel: string; seconds: number }[] = [];
-      for (const [x, y] of path(300, seed)) {
-        const [halfWidth, halfHeight] = [screen.width / 2 / scale, screen.height / 2 / scale];
-        const shown = panelsIn(x - halfWidth, y - halfHeight, 2 * halfWidth, 2 * halfHeight, motion.panel);
-        const last = visits.at(-1);
-        if (shown.length === 1 && last?.panel === String(shown[0])) last.seconds += 1 / fps;
-        else if (shown.length === 1) visits.push({ panel: String(shown[0]), seconds: 0 });
-        else if (last && last.panel !== '') visits.push({ panel: '', seconds: 0 });
+  it('lets every design it passes fill the whole screen for the chosen time', () => {
+    // [speed, seconds asked, seconds expected]: at 0.12 screens a second, 20 s would need more
+    // than the one extra screen of cloth a panel may have, so it gets what that allows.
+    for (const [speed, hold, expected] of [
+      [0.05, 5, 5],
+      [0.05, 12, 12],
+      [0.02, 20, 20],
+      [0.12, 3, 3],
+      [0.12, 20, 1 / 0.12],
+    ]) {
+      const held = fabricMotion(screen, scale, 2, speed, hold);
+      for (const seed of [1, 2, 3]) {
+        // Seconds each panel fills the screen without a break, per visit.
+        const visits: { panel: string; seconds: number }[] = [];
+        const path = new FabricPath(held, seed);
+        for (let frame = 0; frame <= 300 * fps; frame++) {
+          const [x, y] = path.centreAt(frame / fps);
+          const [halfWidth, halfHeight] = [screen.width / 2 / scale, screen.height / 2 / scale];
+          const shown = panelsIn(x - halfWidth, y - halfHeight, 2 * halfWidth, 2 * halfHeight, held.panel);
+          const last = visits.at(-1);
+          if (shown.length === 1 && last?.panel === String(shown[0])) last.seconds += 1 / fps;
+          else if (shown.length === 1) visits.push({ panel: String(shown[0]), seconds: 0 });
+          else if (last && last.panel !== '') visits.push({ panel: '', seconds: 0 });
+        }
+        const designVisits = visits.filter((visit) => visit.panel !== '');
+        // The last visit may be cut off by the end of the run.
+        for (const visit of designVisits.slice(0, -1)) expect(visit.seconds).toBeGreaterThanOrEqual(expected - 0.1);
+        expect(designVisits.length).toBeGreaterThan(2);
       }
-      const designVisits = visits.filter((visit) => visit.panel !== '');
-      // The last visit may be cut off by the end of the run.
-      for (const visit of designVisits.slice(0, -1)) expect(visit.seconds).toBeGreaterThanOrEqual(5);
-      expect(designVisits.length).toBeGreaterThan(5);
     }
   });
 
@@ -330,7 +344,7 @@ describe('endless fabric', () => {
 
 describe('fabric path', () => {
   it('gives the same centres whether asked in order, out of order or afresh', () => {
-    const motion = fabricMotion({ width: 1920, height: 1080 }, 3, 2, 0.05);
+    const motion = fabricMotion({ width: 1920, height: 1080 }, 3, 2, 0.05, 5);
     const path = new FabricPath(motion, 4);
     const late = path.centreAt(3000);
     expect(path.centreAt(12)).toEqual(new FabricPath(motion, 4).centreAt(12)); // back in time
@@ -364,8 +378,8 @@ describe('frame pacing', () => {
 describe('fabric speed', () => {
   it('keeps each design on the full screen for 5 seconds at any speed, with larger panels when faster', () => {
     const screen = { width: 1920, height: 1080 };
-    const slow = fabricMotion(screen, 3, 2, 0.01);
-    const fast = fabricMotion(screen, 3, 2, 0.12);
+    const slow = fabricMotion(screen, 3, 2, 0.01, 5);
+    const fast = fabricMotion(screen, 3, 2, 0.12, 5);
     expect(fast.speed / slow.speed).toBeCloseTo(12, 6);
     expect(fast.panel.height).toBeGreaterThan(slow.panel.height);
     // The margin around the screen leaves room for 5 s of gliding.

@@ -10,6 +10,7 @@
   /** Settings only one of the styles uses. */
   const STYLE_OF_SETTING: Record<string, string> = {
     speed: 'fabric',
+    hold: 'fabric',
     seconds: 'gallery',
     closeups: 'gallery',
     captions: 'gallery',

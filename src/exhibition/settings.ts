@@ -26,7 +26,16 @@ export const EXHIBITION_SCHEMA = [
     max: 0.12,
     step: 0.01,
     default: 0.05,
-    help: 'How fast the endless fabric glides, in screen heights per second. Each design still fills the screen for at least 5 seconds; faster needs more graphics memory.',
+    help: 'How fast the endless fabric glides, in screen heights per second.',
+  },
+  {
+    key: 'hold',
+    type: 'int',
+    label: 'Each design fills the screen for',
+    min: 1,
+    max: 20,
+    default: 5,
+    help: 'Seconds, at least, that each design of the endless fabric fills the whole screen as it glides past. Longer times use larger (more memory-hungry) panels; at fast speeds the time is limited to what one extra screen of cloth allows.',
   },
   {
     key: 'vary',

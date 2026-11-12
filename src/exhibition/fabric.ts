@@ -9,8 +9,11 @@ import { patternOnly } from '../layouts/registry';
 import type { Size } from '../layouts/types';
 import { nextDesign, type ExhibitionSettings } from './settings';
 
-/** Seconds each design fills the whole screen as the cloth glides past it, at least. */
-export const FULL_SCREEN_SECONDS = 5;
+/**
+ * Largest extra panel size for the full-screen time, in screen sizes: longer
+ * times at fast speeds would need enormous panel images.
+ */
+const MAX_HOLD_MARGIN = 1;
 /** Radius of the curve at each turn, in screen sizes. */
 const TURN_RADIUS = 0.15;
 /** Panels the cloth runs straight across between turns: 1 up to this many. */
@@ -35,19 +38,21 @@ export interface FabricMotion {
 
 /**
  * Panels a bit larger than the screen both ways, so a design fills the whole
- * screen for FULL_SCREEN_SECONDS as it glides past, with room for the curve of a
- * turn; a whole number of design cells. `scale`: pixels per thread.
+ * screen for `holdSeconds` as it glides past (as far as MAX_HOLD_MARGIN allows),
+ * with room for the curve of a turn; a whole number of design cells.
+ * `scale`: pixels per thread; `screensPerSecond`: gliding speed.
  */
 export function fabricMotion(
   viewport: Size,
   scale: number,
   threadsPerCell: number,
   screensPerSecond: number,
+  holdSeconds: number,
 ): FabricMotion {
   const screen = Math.min(viewport.width, viewport.height) / scale;
   const speed = screensPerSecond * screen;
-  // Room for 5 s of gliding, and for the curve of a turn (one radius).
-  const margin = speed * FULL_SCREEN_SECONDS + TURN_RADIUS * screen;
+  // Room for `holdSeconds` of gliding, and for the curve of a turn (one radius).
+  const margin = Math.min(screensPerSecond * holdSeconds, MAX_HOLD_MARGIN) * screen + TURN_RADIUS * screen;
   const cells = (threads: number) => Math.max(8, Math.ceil(threads / threadsPerCell)) * threadsPerCell;
   return {
     panel: { width: cells(viewport.width / scale + margin), height: cells(viewport.height / scale + margin) },

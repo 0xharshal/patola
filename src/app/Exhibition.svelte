@@ -118,7 +118,7 @@
    */
   let lastMotion: FabricMotion | null = null;
   const motion = $derived.by(() => {
-    const next = fabricMotion(viewport, fabricScale, frame.render.step, options.speed);
+    const next = fabricMotion(viewport, fabricScale, frame.render.step, options.speed, options.hold);
     if (lastMotion && JSON.stringify(lastMotion) === JSON.stringify(next)) return lastMotion;
     return (lastMotion = next);
   });
