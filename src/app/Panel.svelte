@@ -27,6 +27,7 @@
     onCopyLink,
     onOpenWallpaper,
     onExport,
+    onInstall,
     onLearn,
     onOpenDesignFile,
   }: {
@@ -42,6 +43,8 @@
     onCopyLink: () => Promise<boolean>;
     onOpenWallpaper: () => void;
     onExport: () => void;
+    /** Install as an app; null when the browser doesn't offer it (or it is installed). */
+    onInstall: (() => Promise<void>) | null;
     onLearn: () => void;
     onOpenDesignFile: (file: File) => void;
   } = $props();
@@ -132,6 +135,9 @@
       <FileButton label="Open design file…" accept=".json,application/json" onFile={onOpenDesignFile} />
       <button class="button" onclick={copyLink}>{copied ? 'Link copied' : 'Copy link'}</button>
       <button class="button" onclick={onOpenWallpaper}>Open as wallpaper</button>
+      {#if onInstall}
+        <button class="button" onclick={onInstall} title="Use it like an app, also offline">Install app</button>
+      {/if}
     </div>
   </div>
 </aside>

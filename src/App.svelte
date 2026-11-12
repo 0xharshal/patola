@@ -8,6 +8,7 @@
   import { compactQuery } from './core/compactLink';
   import { designFromFile } from './core/designFile';
   import { applyGuideAction } from './education/guide';
+  import { setUpOfflineSupport, watchInstallPrompt } from './app/pwa';
   import { History } from './core/history';
   import { onCodeResult } from './custom/codeRunner';
   import { onMotifsChanged } from './motifs/library';
@@ -149,14 +150,32 @@
     }
   }
 
-  // Short messages over the picture (export progress, opened files, errors).
+  // Short messages over the picture (export progress, opened files, errors, updates).
+  interface NoticeAction {
+    label: string;
+    run: () => void;
+  }
   let notice = $state('');
+  let noticeAction: NoticeAction | null = $state(null);
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-  function showNotice(message: string, keep = false) {
+  function showNotice(message: string, keep = false, action: NoticeAction | null = null) {
     notice = message;
+    noticeAction = action;
     clearTimeout(noticeTimer);
     if (!keep) noticeTimer = setTimeout(() => (notice = ''), 5000);
   }
+
+  // Installable app: offline support and updates (production builds only), and the install button.
+  let install: (() => Promise<void>) | null = $state(null);
+  onMount(() => {
+    if (import.meta.env.PROD) {
+      setUpOfflineSupport({
+        onUpdateReady: (apply) => showNotice('A new version is available.', true, { label: 'Reload', run: apply }),
+        onOfflineReady: () => showNotice('Ready to work offline.'),
+      });
+    }
+    return watchInstallPrompt((available) => (install = available));
+  });
 
   /** Which dialog is open. Dialogs are loaded on first use to keep the first page load small. */
   let openDialog: 'export' | 'learn' | null = $state(null);
@@ -225,6 +244,7 @@
       onCopyLink={copyLink}
       onOpenWallpaper={() => window.open(linkFor('wallpaper'), '_blank', 'noopener')}
       onExport={() => (openDialog = 'export')}
+      onInstall={install}
       onLearn={() => (openDialog = 'learn')}
       onOpenDesignFile={openDesignFile}
     />
@@ -239,7 +259,12 @@
     {/await}
   {/if}
   {#if notice}
-    <p class="notice" role="status">{notice}</p>
+    <p class="notice" role="status">
+      {notice}
+      {#if noticeAction}
+        <button class="notice-action" onclick={noticeAction.run}>{noticeAction.label}</button>
+      {/if}
+    </p>
   {/if}
 </div>
 
@@ -269,6 +294,14 @@
     font-size: 0.9rem;
     box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
     z-index: 10;
+  }
+  .notice-action {
+    margin-left: 10px;
+    padding: 2px 10px;
+    border: 1px solid currentColor;
+    border-radius: var(--radius);
+    background: transparent;
+    font-weight: 600;
   }
   .wallpaper .main {
     position: fixed;
