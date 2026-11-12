@@ -65,11 +65,12 @@
       viewport,
       pixelRatio,
       closeups: options.closeups,
+      seconds: options.seconds,
       random: mulberry32(design.seed + dropped + shown),
       interest: gridInterest(frame.grid, frame.render.step),
     }),
   );
-  const camera = $derived(cameraAt(tour, viewport.width, elapsed / options.seconds));
+  const camera = $derived(cameraAt(tour, pieceThreads, viewport, elapsed / options.seconds));
   const opacity = $derived(
     Math.max(0, Math.min(1, elapsed / FADE_SECONDS, (options.seconds - elapsed) / FADE_SECONDS)),
   );

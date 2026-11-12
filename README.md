@@ -24,11 +24,13 @@ decisions: [PLAN.md](PLAN.md).
   _Light from_ places the lamp; the silk reflects it, so the sheen moves with it
   and slides over the threads as you move around the cloth.
 - **Exhibition** (panel section): a full-screen slideshow for a large screen. The
-  camera glides from the whole piece to the motifs and down to single threads, then
-  the next design fades in, with a caption about it. Choose what changes between
-  designs, the time per design, close-ups and captions. Space pauses, arrow keys
-  skip, F toggles full screen, Esc ends it; the screen stays on while it runs. It
-  draws every screen pixel, so a 4K screen shows a 4K picture.
+  camera drifts slowly along the piece and zooms calmly in to the motifs and down to
+  single threads (shorter times per design zoom less deep, so nothing moves faster),
+  always filling the screen with cloth; then the next design fades in, with a
+  caption about it. Choose what changes between designs, the time per design,
+  close-ups and captions. Space pauses, arrow keys skip, F toggles full screen, Esc
+  ends it; the screen stays on while it runs. It draws every screen pixel, so a 4K
+  screen shows a 4K picture.
 - **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
   a photo, and palettes saved in your browser.
 - **Advanced** (panel section, kept in this browser, not in links): which graphics

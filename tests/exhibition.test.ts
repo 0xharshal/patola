@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { cameraAt, flight, gridInterest, planTour } from '../src/exhibition/tour';
+import { cameraAt, gridInterest, planTour, zoomMove } from '../src/exhibition/tour';
+import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
 import { defaultDesign } from '../src/core/design';
 import { defaultParams } from '../src/core/params';
@@ -10,73 +11,150 @@ import { MAX_SCALE } from '../src/render/camera';
 const viewport = { width: 1920, height: 1080 };
 const piece = { width: 3000, height: 1200 };
 
-describe('exhibition camera flights', () => {
-  const from = { centreX: 100, centreY: 100, scale: 0.5 };
-  const to = { centreX: 2500, centreY: 900, scale: 20 };
+describe('exhibition camera moves', () => {
+  const from = { centreX: 1500, centreY: 600, scale: 0.7 };
+  const to = { centreX: 1300, centreY: 500, scale: 20 };
 
   it('starts and ends at the given cameras', () => {
-    const start = flight(from, to, viewport.width, 0);
-    const end = flight(from, to, viewport.width, 1);
-    for (const [actual, expected] of [
-      [start, from],
-      [end, to],
-    ]) {
-      expect(actual.centreX).toBeCloseTo(expected.centreX, 6);
-      expect(actual.centreY).toBeCloseTo(expected.centreY, 6);
-      expect(actual.scale).toBeCloseTo(expected.scale, 6);
-    }
+    expect(zoomMove(from, to, 0)).toEqual(from);
+    const end = zoomMove(from, to, 1);
+    expect(end.scale).toBeCloseTo(to.scale, 9);
+    expect(end.centreX).toBeCloseTo(to.centreX, 9);
+    expect(end.centreY).toBeCloseTo(to.centreY, 9);
   });
 
-  it('zooms out to travel far, then back in', () => {
-    const near = { centreX: 0, centreY: 0, scale: 20 };
-    const far = { centreX: 3000, centreY: 0, scale: 20 };
-    expect(flight(near, far, viewport.width, 0.5).scale).toBeLessThan(5);
+  it('zooms at an even rate around one fixed point of the cloth', () => {
+    expect(zoomMove({ ...from, scale: 1 }, { ...to, scale: 16 }, 0.5).scale).toBeCloseTo(4, 9);
+    // The fixed point sits at the same place on screen in every frame.
+    const screenOffset = (camera: typeof from, x: number) => (x - camera.centreX) * camera.scale;
+    const fixedX = (to.centreX * to.scale - from.centreX * from.scale) / (to.scale - from.scale);
+    for (const t of [0, 0.3, 0.7, 1])
+      expect(screenOffset(zoomMove(from, to, t), fixedX)).toBeCloseTo(screenOffset(from, fixedX), 6);
   });
 
-  it('zooms in place geometrically', () => {
-    const middle = flight({ centreX: 5, centreY: 5, scale: 1 }, { centreX: 5, centreY: 5, scale: 16 }, 1000, 0.5);
-    expect(middle.scale).toBeCloseTo(4, 6);
-    expect(middle.centreX).toBe(5);
+  it('pans evenly between views of the same size', () => {
+    const middle = zoomMove({ centreX: 0, centreY: 0, scale: 5 }, { centreX: 100, centreY: 40, scale: 5 }, 0.25);
+    expect(middle).toEqual({ centreX: 25, centreY: 10, scale: 5 });
   });
 });
 
 describe('exhibition tours', () => {
   const plan = (seed: number, closeups = true) =>
-    planTour({ piece, viewport, pixelRatio: 2, closeups, random: mulberry32(seed) });
+    planTour({ piece, viewport, pixelRatio: 2, closeups, seconds: 60, random: mulberry32(seed) });
 
-  it('starts and ends on the whole piece, and is the same for the same seed', () => {
+  it('starts and ends on the widest view that fills the screen, the same for the same seed', () => {
     const stops = plan(4);
     expect(stops[0].at).toBe(0);
     expect(stops.at(-1)!.at).toBe(1);
-    expect(stops[0].camera).toEqual(stops.at(-1)!.camera);
-    expect(stops[0].camera.scale).toBeLessThan(1);
+    const cover = Math.max(viewport.width / piece.width, viewport.height / piece.height);
+    expect(stops[0].camera.scale).toBeCloseTo(cover, 9);
+    expect(stops.at(-1)!.camera.scale).toBeCloseTo(cover, 9);
     expect(plan(4)).toEqual(stops);
   });
 
   it('zooms down to the threads only with close-ups on', () => {
     const closest = (closeups: boolean) => Math.max(...plan(9, closeups).map((stop) => stop.camera.scale));
-    expect(closest(true)).toBeGreaterThanOrEqual(40);
+    expect(closest(true)).toBeGreaterThanOrEqual(35);
     expect(closest(true)).toBeLessThanOrEqual(MAX_SCALE);
     expect(closest(false)).toBeLessThan(20);
   });
 
-  it('keeps zoomed-in views on the piece', () => {
-    for (const { camera } of plan(11)) {
-      if (camera.scale * piece.width < viewport.width) continue;
-      expect(camera.centreX - viewport.width / 2 / camera.scale).toBeGreaterThanOrEqual(-1e-9);
-      expect(camera.centreX + viewport.width / 2 / camera.scale).toBeLessThanOrEqual(piece.width + 1e-9);
+  it('fills the screen with cloth in every frame, for long, tall and square pieces', () => {
+    for (const shape of [
+      piece,
+      { width: 9000, height: 700 },
+      { width: 500, height: 3000 },
+      { width: 900, height: 900 },
+    ]) {
+      for (const seed of [1, 2, 3]) {
+        const stops = planTour({
+          piece: shape,
+          viewport,
+          pixelRatio: 1,
+          closeups: true,
+          seconds: 60,
+          random: mulberry32(seed),
+        });
+        for (let step = 0; step <= 200; step++) {
+          const camera = cameraAt(stops, shape, viewport, step / 200);
+          const halfWidth = viewport.width / 2 / camera.scale;
+          const halfHeight = viewport.height / 2 / camera.scale;
+          expect(camera.centreX - halfWidth).toBeGreaterThanOrEqual(-1e-6);
+          expect(camera.centreX + halfWidth).toBeLessThanOrEqual(shape.width + 1e-6);
+          expect(camera.centreY - halfHeight).toBeGreaterThanOrEqual(-1e-6);
+          expect(camera.centreY + halfHeight).toBeLessThanOrEqual(shape.height + 1e-6);
+        }
+      }
     }
+  });
+
+  it('moves calmly: slow screen motion, gentle zooms, no sudden changes, for short and long tours (30 fps)', () => {
+    const screen = { width: 1920, height: 1080 };
+    const fps = 30;
+    const corners = [
+      [0, 0],
+      [screen.width, 0],
+      [0, screen.height],
+      [screen.width, screen.height],
+    ];
+    /** Screen widths per second the fastest screen corner moves over the cloth. */
+    const cornerSpeed = (before: Camera, after: Camera) =>
+      Math.max(
+        ...corners.map(([x, y]) => {
+          const pieceX = before.centreX + (x - screen.width / 2) / before.scale;
+          const pieceY = before.centreY + (y - screen.height / 2) / before.scale;
+          const movedX = (pieceX - after.centreX) * after.scale + screen.width / 2;
+          const movedY = (pieceY - after.centreY) * after.scale + screen.height / 2;
+          return (Math.hypot(movedX - x, movedY - y) * fps) / screen.width;
+        }),
+      );
+    let fastest = 0;
+    let fastestZoom = 0;
+    let suddenest = 0;
+    for (const shape of [piece, { width: 9000, height: 700 }, { width: 900, height: 900 }]) {
+      for (const [seed, seconds] of [
+        [1, 15],
+        [2, 30],
+        [3, 60],
+        [4, 60],
+        [5, 120],
+        [6, 600],
+      ]) {
+        const stops = planTour({
+          piece: shape,
+          viewport: screen,
+          pixelRatio: 1,
+          closeups: true,
+          seconds,
+          random: mulberry32(seed),
+        });
+        let previous = cameraAt(stops, shape, screen, 0);
+        let previousSpeed = 0;
+        for (let frame = 1; frame <= seconds * fps; frame++) {
+          const camera = cameraAt(stops, shape, screen, frame / (seconds * fps));
+          const speed = cornerSpeed(previous, camera);
+          fastest = Math.max(fastest, speed);
+          fastestZoom = Math.max(fastestZoom, Math.abs(Math.log(camera.scale / previous.scale)) * fps);
+          suddenest = Math.max(suddenest, Math.abs(speed - previousSpeed) * fps);
+          [previous, previousSpeed] = [camera, speed];
+        }
+      }
+    }
+    // Measured: corners ≤ 0.33 screen widths/s, zoom ≤ 0.32 e-folds/s, speed changes ≤ 0.54 widths/s² (15 s tours).
+    expect(fastest).toBeLessThan(0.35);
+    expect(fastestZoom).toBeLessThan(0.35);
+    expect(suddenest).toBeLessThan(0.6);
   });
 
   it('moves continuously through the stops', () => {
     const stops = plan(2);
-    let previous = cameraAt(stops, viewport.width, 0);
+    let previous = cameraAt(stops, piece, viewport, 0);
     for (let step = 1; step <= 1000; step++) {
-      const camera = cameraAt(stops, viewport.width, step / 1000);
+      const camera = cameraAt(stops, piece, viewport, step / 1000);
       expect(Math.abs(Math.log(camera.scale / previous.scale))).toBeLessThan(0.1);
       previous = camera;
     }
-    const atStop = cameraAt(stops, viewport.width, stops[4].at);
+    const atStop = cameraAt(stops, piece, viewport, stops[4].at);
     expect(atStop.scale).toBeCloseTo(stops[4].camera.scale, 6);
     expect(atStop.centreX).toBeCloseTo(stops[4].camera.centreX, 6);
   });
