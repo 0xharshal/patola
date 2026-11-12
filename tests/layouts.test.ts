@@ -68,6 +68,23 @@ describe('layouts', () => {
     expect(gridFor(32, true, false)).not.toEqual(gridFor(24, false, false));
   });
 
+  it('never mirrors a saathiya, even in mirrored borders', () => {
+    const design = defaultDesign();
+    applyLayout(design, 'saree');
+    design.layoutSettings.divider = 0; // no dividing lines over the border edges
+    const symbols = getGenerator('symbols');
+    design.zones.border = { generator: 'symbols', params: { ...defaultParams(symbols.params), symbol: 'saathiya' } };
+    const { grid, regions } = compose(design, screen);
+    // The top border and the bottom one (mirrored top to bottom for other patterns) must match row for row.
+    const [top, bottom] = regions.filter((region) => region.zone === 'border' && region.width === grid.width);
+    const rows = (region: (typeof regions)[number]) =>
+      Array.from({ length: region.height }, (_, row) =>
+        grid.slots.slice((region.y + row) * grid.width, (region.y + row + 1) * grid.width).join(''),
+      );
+    expect(bottom.flipY).toBe(true);
+    expect(rows(bottom)).toEqual(rows(top));
+  });
+
   it('switching layout gives every zone a pattern', () => {
     const design = defaultDesign();
     applyLayout(design, 'saree');

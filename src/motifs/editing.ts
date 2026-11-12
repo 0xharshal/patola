@@ -1,5 +1,6 @@
 /** Pure grid operations behind the motif editor. Grids are edited in place unless stated. */
 import type { MotifGrid } from './format';
+import { SLOT } from '../generators/types';
 
 export interface Mirror {
   /** Mirror left ↔ right (around the vertical centre line). */
@@ -119,4 +120,21 @@ export function cellsOnLine(fromX: number, fromY: number, toX: number, toY: numb
       y += stepY;
     }
   }
+}
+
+/** The grid without empty (all-ground) rows and columns around the drawing. */
+export function cropToDrawing(grid: MotifGrid): MotifGrid {
+  const { width, height, slots } = grid;
+  let [left, top, right, bottom] = [width, height, -1, -1];
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if (slots[y * width + x] !== SLOT.ground) {
+        [left, top] = [Math.min(left, x), Math.min(top, y)];
+        [right, bottom] = [Math.max(right, x), Math.max(bottom, y)];
+      }
+  if (right < 0) return grid;
+  const cropped = blankGrid(right - left + 1, bottom - top + 1);
+  for (let y = top; y <= bottom; y++)
+    cropped.slots.set(slots.subarray(y * width + left, y * width + right + 1), (y - top) * cropped.width);
+  return cropped;
 }

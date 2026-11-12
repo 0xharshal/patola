@@ -23,6 +23,11 @@ export interface Generator<Schema extends ParamSchema = ParamSchema> {
   params: Schema;
   /** Custom generators depend on user content, so "Surprise me" never picks them. */
   userContent?: boolean;
+  /**
+   * True when the pattern must never be mirrored, e.g. a saathiya (swastika) or Om,
+   * whose mirror image means something else. Layouts then don't mirror its regions.
+   */
+  keepsHandedness?(params: ParamValues<Schema>): boolean;
   generate(params: ParamValues<Schema>, context: GenerateContext): Uint8Array;
 }
 

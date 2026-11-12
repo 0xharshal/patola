@@ -9,6 +9,8 @@ import { chowkdi } from './chowkdi';
 import { stripes } from './stripes';
 import { kinar } from './kinar';
 import { imageMotif } from './imageMotif';
+import { symbols } from './symbols';
+import { chakra } from './chakra';
 import { nariKunjar } from './nariKunjar';
 import { customCode } from './customCode';
 import { withRotation } from './rotation';
@@ -25,6 +27,8 @@ export const GENERATORS: Generator[] = [
   stripes,
   kinar,
   nariKunjar,
+  symbols,
+  chakra,
   imageMotif,
   customCode,
 ].map(withRotation);

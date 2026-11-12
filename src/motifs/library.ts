@@ -19,6 +19,8 @@ export interface Motif extends MotifGrid {
   colours: string[];
   builtIn?: boolean;
   about?: string;
+  /** False for signs that must never be mirrored (saathiya, Om). */
+  mirrorable?: boolean;
 }
 
 interface StoredMotif extends Omit<Motif, 'slots'> {

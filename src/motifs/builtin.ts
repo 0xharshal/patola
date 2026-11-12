@@ -5,11 +5,15 @@
  * # outline, Z zari).
  */
 import { motifFromArt, type MotifGrid } from './format';
+import { SYMBOLS, symbolGrid, type SymbolDef } from './symbols';
+import { cropToDrawing } from './editing';
 
 export interface BuiltInMotif extends MotifGrid {
   id: string;
   name: string;
   about: string;
+  /** False for signs that must never be mirrored (saathiya, Om); figures may face either way. */
+  mirrorable?: boolean;
 }
 
 export const BUILT_IN_PREFIX = 'builtin:';
@@ -192,4 +196,27 @@ export const VRIKSHA = motif(
 `,
 );
 
-export const BUILT_IN_MOTIFS: BuiltInMotif[] = [HATHI, POPAT, NARI, KALASH, VRIKSHA];
+/** Height in cells of the drawn symbols in the motif library (the Symbols pattern draws them at any size). */
+const SYMBOL_MOTIF_HEIGHT = 26;
+
+function drawnMotif(symbol: SymbolDef): BuiltInMotif {
+  return {
+    id: BUILT_IN_PREFIX + symbol.id,
+    name: symbol.name,
+    about: symbol.about,
+    mirrorable: symbol.faces === true,
+    ...cropToDrawing(symbolGrid(symbol, SYMBOL_MOTIF_HEIGHT)),
+  };
+}
+
+const DRAWN_MOTIFS = SYMBOLS.map(drawnMotif);
+
+/** A drawn symbol as a library motif, by symbol id. */
+function drawn(id: string): BuiltInMotif {
+  return DRAWN_MOTIFS.find((motif) => motif.id === BUILT_IN_PREFIX + id)!;
+}
+
+export const MOR = drawn('mor');
+export const HANSA = drawn('hansa');
+
+export const BUILT_IN_MOTIFS: BuiltInMotif[] = [HATHI, POPAT, NARI, KALASH, VRIKSHA, ...DRAWN_MOTIFS];

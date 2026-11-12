@@ -1,5 +1,5 @@
 /** Parameter definitions shared by several generators. */
-import type { BoolParam, NumberParam, Params } from '../core/params';
+import type { BoolParam, NumberParam, Params, SelectParam } from '../core/params';
 import type { Size } from '../layouts/types';
 
 const REPEAT_MIN = 8;
@@ -58,4 +58,52 @@ export function oneMotifParams(params: Params, size: Size): Params {
   if ('repeat' in fitted) fitted.repeat = Math.min(REPEAT_MAX, Math.max(REPEAT_MIN, Math.min(size.width, size.height)));
   if ('halfDrop' in fitted) fitted.halfDrop = false;
   return fitted;
+}
+
+/** Repeating one motif (pictures, symbols, wheels): ground between repeats. */
+export const MOTIF_GAP_PARAM: NumberParam<'gap'> = {
+  key: 'gap',
+  type: 'int',
+  label: 'Spacing',
+  min: 0,
+  max: 60,
+  default: 6,
+  random: [2, 14],
+  help: 'Ground between repeats, in cells',
+};
+
+export const MOTIF_ARRANGEMENT_PARAM: SelectParam<'arrangement'> = {
+  key: 'arrangement',
+  type: 'select',
+  label: 'Arrangement',
+  default: 'halfDrop',
+  options: [
+    { value: 'grid', label: 'Grid' },
+    { value: 'halfDrop', label: 'Half-drop' },
+    { value: 'single', label: 'Single, centred' },
+  ],
+};
+
+export const MIRROR_ALTERNATE_PARAM: BoolParam<'mirror'> = {
+  key: 'mirror',
+  type: 'bool',
+  label: 'Mirror alternate',
+  default: true,
+  help: 'Every other column faces the other way, so figures face each other',
+};
+
+/** Which palette colours a motif uses: 0 as drawn, 1 and 2 rotate primary → secondary → accent. */
+export const COLOURWAY_PARAM: NumberParam<'colourway'> = {
+  key: 'colourway',
+  type: 'int',
+  label: 'Colourway',
+  min: 0,
+  max: 2,
+  default: 0,
+  help: 'Shift which palette colours the motif uses',
+};
+
+/** A motif slot in a colourway: primary, secondary and accent rotate by `shift`; others stay. */
+export function colourwaySlot(slot: number, shift: number): number {
+  return slot >= 1 && slot <= 3 ? ((slot - 1 + shift) % 3) + 1 : slot;
 }
