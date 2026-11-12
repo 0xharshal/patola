@@ -5,6 +5,9 @@
  */
 
 /** This build's release tag, set by the release workflow; 'dev' for local builds. */
+/** Where the source code lives (also in package.json). */
+export const SOURCE_CODE_URL = 'https://github.com/0xharshal/patola';
+
 export const APP_VERSION: string = import.meta.env.VITE_APP_VERSION || 'dev';
 
 const RELEASE_TAG = /^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;

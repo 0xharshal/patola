@@ -1,13 +1,14 @@
 # Patola Playground — notes for Claude
 
 Static Vite + TypeScript + Svelte 5 app, WebGL2 rendering, GPL-3.0-or-later.
-Usage, build commands and URL parameters: README.md. Roadmap and decisions: PLAN.md.
+Usage: README.md (user-facing only). Building and releases: docs/DEVELOPMENT.md. Link parameters:
+docs/LINKS.md. Custom code and motif files: docs/CUSTOM-CONTENT.md. Roadmap and decisions: PLAN.md.
 Don't repeat those here; link to them.
 
 ## Working here
 
 - Node is NOT installed on the host. Run every npm/node command through
-  `scripts/node.sh` (see README "Building"). The dev server is `.claude/launch.json` "dev".
+  `scripts/node.sh` (see docs/DEVELOPMENT.md). The dev server is `.claude/launch.json` "dev".
 - `npm run lint` (Prettier + ESLint), `npm test` and `npm run build` (svelte-check:
   0 errors, 0 warnings) must all pass before committing. `npm run format` fixes formatting.
 - The service worker only exists in production builds; test PWA/offline behaviour with
@@ -28,13 +29,16 @@ Don't repeat those here; link to them.
 - `src/generators/` — one file per pattern, registered in `registry.ts`; shared
   helpers in `shapes.ts` and `commonParams.ts`; `rotation.ts` wraps every registered
   generator with a Rotation setting (generators themselves stay upright). A generator returns palette slot
-  indices (`SLOT`, plus `ZARI_SLOT` = 7) for a zone of width × height cells.
+  indices (`SLOT`, plus `ZARI_SLOT` = 7) for a zone of width × height cells. Patterns that
+  repeat one motif share `repeatMotif` (imageMotif.ts) and its params (commonParams.ts).
 - `src/layouts/` — pieces made of zones (`types.ts`); region helpers in `regions.ts`.
 - `src/custom/` — user code: `codeRunner.ts` (worker sandbox, trust, cache),
   `storage.ts` (guarded localStorage, ids).
 - `src/motifs/` — `format.ts` (motif text/JSON format), `builtin.ts` (built-in
-  motifs as ASCII art), `library.ts` (built-in + user motifs), `editing.ts`
-  (pure grid operations behind the editor).
+  motifs as ASCII art, plus the drawn symbols), `sketch.ts` (draw shapes onto a cell grid
+  at any size), `symbols.ts` (symbols drawn as shapes, used by the Symbols and Chakra
+  patterns), `library.ts` (built-in + user motifs), `editing.ts` (pure grid operations
+  behind the editor).
 - `src/exhibition/` — the full-screen slideshow: `tour.ts` (camera stops, calm zoom moves
   that keep the screen full, and the plan of prerendered images; pure), `pictures.ts`
   (renders, prepares ahead and crossfades those images), `fabric.ts` (endless fabric: the
@@ -68,6 +72,8 @@ Don't repeat those here; link to them.
 
 - Readable names, no copy-paste: shared params, region helpers, CSS classes and
   docs each have one home.
+- Never mirror a saathiya (swastika) or Om: symbols that face a way set `faces`, library
+  motifs `mirrorable`, and generators `keepsHandedness`, which layouts respect.
 - Designs store palette slot indices, never colours.
 - Everything random uses the design seed (deterministic output).
 - New knobs go into a schema (generator `params`, layout `settings`, `RENDER_SCHEMA`).

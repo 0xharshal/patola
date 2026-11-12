@@ -5,7 +5,8 @@ also usable for design inspiration. Fully client-side, static hosting
 (GitHub Pages / nginx), GPU rendering, phone + tablet + desktop.
 License: **GPL-3.0-or-later**.
 
-How to use and build it, and the URL parameter reference: [README.md](README.md).
+How to use it: [README.md](README.md); building and releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+link parameters: [docs/LINKS.md](docs/LINKS.md).
 Code map and working conventions: [CLAUDE.md](CLAUDE.md). This file holds the
 decisions, the core idea and the roadmap.
 

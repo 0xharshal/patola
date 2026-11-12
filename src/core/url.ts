@@ -1,6 +1,6 @@
 /**
  * Readable URL parameters <-> Design. The parameter reference for users lives
- * in README.md ("URL parameters"); keep the two in sync.
+ * in docs/LINKS.md; keep the two in sync.
  *
  * Invalid or unknown values are ignored, never fatal.
  */
