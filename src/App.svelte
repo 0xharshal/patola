@@ -4,7 +4,7 @@
   import Viewport from './app/Viewport.svelte';
   import { clampSize, renderSettings, type Design } from './core/design';
   import { compose } from './core/compose';
-  import { designToQuery, type UrlState } from './core/url';
+  import { designToQuery, type UrlState, type View } from './core/url';
   import { compactQuery } from './core/compactLink';
   import { designFromFile } from './core/designFile';
   import { applyGuideAction } from './education/guide';
@@ -20,9 +20,11 @@
   let { initial }: { initial: UrlState } = $props();
   // The URL is read once at start-up; later changes come from the editor.
   // svelte-ignore state_referenced_locally
-  const view = initial.view;
+  let view: View = $state(initial.view);
   // svelte-ignore state_referenced_locally
   let design: Design = $state(initial.design);
+  // svelte-ignore state_referenced_locally
+  let exhibition = $state(initial.exhibition);
   let viewportComponent: ReturnType<typeof Viewport> | undefined = $state();
 
   let innerWidth = $state(window.innerWidth);
@@ -128,18 +130,24 @@
     event.preventDefault();
   }
 
-  function linkFor(targetView: 'editor' | 'wallpaper'): string {
-    return `${location.origin}${location.pathname}?${designToQuery(design, targetView)}`;
+  function linkFor(targetView: View): string {
+    return `${location.origin}${location.pathname}?${designToQuery(design, targetView, exhibition)}`;
+  }
+
+  /** Start the exhibition in full screen (must run in the click that asks for it). */
+  function startExhibition() {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    view = 'exhibition';
   }
 
   /** Links longer than this are shared in compact form (d=…), e.g. when they carry code. */
   const LONG_LINK = 1800;
 
-  async function copyLink(): Promise<boolean> {
-    const readable = linkFor('editor');
+  async function copyLink(targetView: View = 'editor'): Promise<boolean> {
+    const readable = linkFor(targetView);
     const url =
       readable.length > LONG_LINK
-        ? `${location.origin}${location.pathname}?${await compactQuery(designToQuery(design))}`
+        ? `${location.origin}${location.pathname}?${await compactQuery(designToQuery(design, targetView, exhibition))}`
         : readable;
     try {
       await navigator.clipboard.writeText(url);
@@ -219,20 +227,34 @@
   onkeydown={onKeydown}
 />
 
-<div class="app" class:wallpaper={view === 'wallpaper'}>
+<div class="app" class:wallpaper={view !== 'editor'}>
   <main class="main">
-    <Viewport
-      bind:this={viewportComponent}
-      {frame}
-      {pieceThreads}
-      threadPx={render.threadPx}
-      interactive={view === 'editor'}
-      fitMode={view === 'wallpaper' ? 'cover' : 'contain'}
-    />
+    {#if view === 'exhibition'}
+      {#await import('./app/Exhibition.svelte') then { default: Exhibition }}
+        <Exhibition
+          bind:design
+          {frame}
+          {pieceThreads}
+          threadPx={render.threadPx}
+          settings={exhibition}
+          onExit={() => (view = 'editor')}
+        />
+      {/await}
+    {:else}
+      <Viewport
+        bind:this={viewportComponent}
+        {frame}
+        {pieceThreads}
+        threadPx={render.threadPx}
+        interactive={view === 'editor'}
+        fitMode={view === 'wallpaper' ? 'cover' : 'contain'}
+      />
+    {/if}
   </main>
   {#if view === 'editor'}
     <Panel
       bind:design
+      bind:exhibition
       {screenPixels}
       {pieceThreads}
       {canUndo}
@@ -241,8 +263,10 @@
       onRedo={() => travel('redo')}
       onFocusZone={focusZone}
       onShowAll={() => viewportComponent?.fit()}
-      onCopyLink={copyLink}
+      onCopyLink={() => copyLink()}
       onOpenWallpaper={() => window.open(linkFor('wallpaper'), '_blank', 'noopener')}
+      onStartExhibition={startExhibition}
+      onCopyExhibitionLink={() => copyLink('exhibition')}
       onExport={() => (openDialog = 'export')}
       onInstall={install}
       onLearn={() => (openDialog = 'learn')}

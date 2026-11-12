@@ -34,6 +34,9 @@ Don't repeat those here; link to them.
 - `src/motifs/` — `format.ts` (motif text/JSON format), `builtin.ts` (built-in
   motifs as ASCII art), `library.ts` (built-in + user motifs), `editing.ts`
   (pure grid operations behind the editor).
+- `src/exhibition/` — the full-screen slideshow: `tour.ts` (camera stops and smooth
+  van Wijk zoom-and-pan flights, pure), `settings.ts` (`EXHIBITION_SCHEMA`, `x.` in URLs,
+  and the next design); the UI is `src/app/Exhibition.svelte`.
 - `src/education/guide.ts` — the Learn guide (technique texts; motif/layout texts come from their definitions) and its actions.
 - `src/palettes/` — presets, random palettes, `extract.ts` (k-means quantising).
 - `src/render/` — `renderer.ts` (WebGL2, linear-light palette, supersampling), `shaders.ts`
@@ -43,7 +46,8 @@ Don't repeat those here; link to them.
   Shader effects must depend on piece position, never screen pixels, or tiles show seams
   (and camera moves shimmer). Detail finer than a pixel must fade out (`resolved()`).
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
-  `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`);
+  `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`,
+  `ExhibitionSection`); `Viewport` can be steered from outside (`camera` prop);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
   motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt;
   `versions.ts` + `VersionPicker` find the published releases (`versions.json`) and switch

@@ -23,7 +23,8 @@ decisions, the core idea and the roadmap.
 | Views          | Whole-piece overview and zoom into any zone; pan, pinch, wheel zoom                        |
 | Devices        | Phone and tablet required                                                                  |
 | Sharing        | Whole design in the URL: share links and a wallpaper generator                             |
-| Out of scope   | Gujarati UI labels, animation, server-side rendering                                       |
+| Exhibition     | Full-screen slideshow: camera tours each design, then the next fades in                    |
+| Out of scope   | Gujarati UI labels, animated patterns, server-side rendering                               |
 | Stack          | Vite + TypeScript + Svelte 5, raw WebGL2, Vitest; tooling runs in a container              |
 
 ## 2. Core idea: threads, not pixels
@@ -53,8 +54,9 @@ Layout (zones)  ─►  Generators per zone  ─►  Design grid      ─►  We
 | 4   | Built-in motifs, Nari Kunjar, motif grid editor (draw, mirror, import / export)                     | Done   |
 | 5   | Export (tiled streaming PNG, JPG, SVG, design files), `download=` / `random=` / compact `d=` links  | Done   |
 | 6   | Thread views, Learn guide, mobile pass, lazy-loaded dialogs, GitHub Pages releases                  | Done   |
+| 7   | Exhibition: detailed realistic shader (feathering, yarn), full-resolution full-screen slideshow     | Done   |
 
-Each milestone ends in a working, deployable build. All six planned milestones are done.
+Each milestone ends in a working, deployable build. All seven milestones are done.
 
 ## 4. Open items and ideas
 

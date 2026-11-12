@@ -6,17 +6,20 @@
   import LayoutSection from './LayoutSection.svelte';
   import WeaveSection from './WeaveSection.svelte';
   import SizeSection from './SizeSection.svelte';
+  import ExhibitionSection from './ExhibitionSection.svelte';
   import ZonePattern from './ZonePattern.svelte';
   import VersionPicker from './VersionPicker.svelte';
   import { getLayout, patternOnly } from '../layouts/registry';
   import { BODY_ZONE, type Size } from '../layouts/types';
   import { SLOT_COUNT } from '../palettes/presets';
   import { zoneFill, type Design } from '../core/design';
+  import type { Params } from '../core/params';
   import { randomizeColours, randomizePattern, surprise } from '../core/randomize';
 
   /** The control panel: a side panel on desktop, a bottom sheet on phones. */
   let {
     design = $bindable(),
+    exhibition = $bindable(),
     screenPixels,
     pieceThreads,
     canUndo,
@@ -27,12 +30,15 @@
     onShowAll,
     onCopyLink,
     onOpenWallpaper,
+    onStartExhibition,
+    onCopyExhibitionLink,
     onExport,
     onInstall,
     onLearn,
     onOpenDesignFile,
   }: {
     design: Design;
+    exhibition: Params;
     screenPixels: Size;
     pieceThreads: Size;
     canUndo: boolean;
@@ -43,6 +49,8 @@
     onShowAll: () => void;
     onCopyLink: () => Promise<boolean>;
     onOpenWallpaper: () => void;
+    onStartExhibition: () => void;
+    onCopyExhibitionLink: () => Promise<boolean>;
     onExport: () => void;
     /** Install as an app; null when the browser doesn't offer it (or it is installed). */
     onInstall: (() => Promise<void>) | null;
@@ -130,6 +138,8 @@
     <WeaveSection bind:design />
 
     <SizeSection bind:design {screenPixels} {pieceThreads} />
+
+    <ExhibitionSection bind:exhibition onStart={onStartExhibition} onCopyLink={onCopyExhibitionLink} />
 
     <div class="actions">
       <button class="button primary" onclick={onExport}>Export…</button>
