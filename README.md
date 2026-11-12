@@ -26,7 +26,8 @@ decisions: [PLAN.md](PLAN.md).
 - **Exhibition** (panel section): a full-screen slideshow for a large screen. The
   camera glides from the whole piece to the motifs and down to single threads, then
   the next design fades in, with a caption about it. Choose what changes between
-  designs, the time per design, close-ups and captions. Space pauses, arrow keys
+  designs, the time per design, close-ups, captions and the frame rate (30 per
+  second by default, which halves the work for slower graphics). Space pauses, arrow keys
   skip, F toggles full screen, Esc ends it; the screen stays on while it runs. It
   draws every screen pixel, so a 4K screen shows a 4K picture.
 - **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
@@ -148,6 +149,7 @@ generator. The address bar updates as you edit. Invalid values are ignored.
 | `view`                                  | `wallpaper`, `exhibition`                                                                                                               | Full-screen picture without controls, or the exhibition slideshow                                                                                                                                        |
 | `x.vary`                                | `all`, `pattern`, `colours`, `none`                                                                                                     | Exhibition: what changes from one design to the next                                                                                                                                                     |
 | `x.seconds`, `x.closeups`, `x.captions` | `60`, `1`, `1`                                                                                                                          | Exhibition: seconds per design (15–600), close-ups of the threads, captions                                                                                                                              |
+| `x.fps`                                 | `30`, `60`                                                                                                                              | Exhibition: frames per second                                                                                                                                                                            |
 | `random`                                | `pattern,colours,seed` or `all`                                                                                                         | Re-roll these on every load (great with `view=wallpaper`)                                                                                                                                                |
 | `download`                              | `png`, `jpg`, `svg`, `design`                                                                                                           | Export as soon as the page has loaded                                                                                                                                                                    |
 | `size`                                  | `4000`                                                                                                                                  | Long side in px for `download` (default: at thread size)                                                                                                                                                 |

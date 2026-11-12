@@ -35,6 +35,17 @@ export const EXHIBITION_SCHEMA = [
     default: true,
     help: 'Zoom in until single threads, the feathered ikat edges and the silk show',
   },
+  {
+    key: 'fps',
+    type: 'select',
+    label: 'Frame rate',
+    default: '30',
+    options: [
+      { value: '30', label: '30 per second (smooth on most computers)' },
+      { value: '60', label: '60 per second (needs a fast graphics card)' },
+    ],
+    help: 'How often the moving picture is redrawn. The camera moves slowly, so 30 looks smooth and halves the work.',
+  },
   { key: 'captions', type: 'bool', label: 'Captions', default: true, help: 'Name and story of each design' },
 ] as const satisfies ParamSchema;
 

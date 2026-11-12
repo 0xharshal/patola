@@ -106,6 +106,9 @@
     let last = performance.now();
     let frameId = 0;
     const tick = (now: number) => {
+      frameId = requestAnimationFrame(tick);
+      // Draw only as often as the frame rate asks (a little early is fine: screens refresh at their own pace).
+      if (now - last < 1000 / Number(options.fps) - 4) return;
       // At most 0.1 s per frame, so a hidden tab doesn't jump ahead when it comes back.
       const seconds = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -113,7 +116,6 @@
         elapsed += seconds;
         if (elapsed >= options.seconds) go(1);
       }
-      frameId = requestAnimationFrame(tick);
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
