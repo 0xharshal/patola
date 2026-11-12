@@ -7,14 +7,14 @@
 import type { Frame, PatolaRenderer, RenderedImage } from '../render/renderer';
 import type { Rect } from '../layouts/types';
 import type { TourImage } from './tour';
+import { PreparationBudget, TOUR_PREPARATION_RATE } from './pacing';
 
-/** Pixels of the next image to render per frame: small enough not to slow the frame down. */
-const PREPARE_PIXELS_PER_FRAME = 600_000;
 /** Crossfade between consecutive images, in seconds. */
 const CROSSFADE_SECONDS = 0.6;
 
 export class TourPictures {
   private images = new Map<TourImage, RenderedImage>();
+  private budget = new PreparationBudget(TOUR_PREPARATION_RATE);
 
   constructor(readonly renderer: PatolaRenderer) {}
 
@@ -38,7 +38,8 @@ export class TourPictures {
     if (previous && fade < 1 && previous.rowsDone >= previous.height)
       this.renderer.drawImage(previous, frame.view, 1 - fade);
 
-    if (index + 1 < plan.length) this.prepare(plan[index + 1], weave, PREPARE_PIXELS_PER_FRAME);
+    const budget = this.budget.forFrame();
+    if (index + 1 < plan.length) this.prepare(plan[index + 1], weave, budget);
     this.forgetAllBut(plan.slice(Math.max(0, index - 1), index + 2));
   }
 

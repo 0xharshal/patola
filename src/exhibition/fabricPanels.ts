@@ -9,9 +9,7 @@ import type { Frame, PatolaRenderer, RenderedImage, View } from '../render/rende
 import type { Size } from '../layouts/types';
 import type { ExhibitionSettings } from './settings';
 import { panelDesign, panelsIn } from './fabric';
-
-/** Pixels of upcoming panels to render per frame: small enough not to slow the frame down. */
-const PREPARE_PIXELS_PER_FRAME = 600_000;
+import { PreparationBudget } from './pacing';
 
 interface Panel {
   design: Design;
@@ -33,7 +31,13 @@ export class FabricPanels {
     private seed: number,
     readonly panel: Size,
     readonly scale: number,
-  ) {}
+    /** Pixels of upcoming panels to render per second (see fabricPreparationRate). */
+    preparePixelsPerSecond: number,
+  ) {
+    this.budget = new PreparationBudget(preparePixelsPerSecond);
+  }
+
+  private readonly budget: PreparationBudget;
 
   /**
    * Draw the view (in fabric threads). `upcoming`: views the cloth will reach
@@ -73,7 +77,7 @@ export class FabricPanels {
    * mipmaps take a moment too).
    */
   private prepareAhead(ahead: [number, number][]): void {
-    let budget = PREPARE_PIXELS_PER_FRAME;
+    let budget = this.budget.forFrame();
     for (const [column, row] of ahead) {
       const panel = this.panels.get(keyOf(column, row));
       if (!panel || !this.renderer.isImageValid(panel.image)) {

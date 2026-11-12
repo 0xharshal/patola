@@ -7,8 +7,13 @@
   /** Settings of the full-screen exhibition (slideshow); it is started from the panel's actions. */
   let { exhibition = $bindable() }: { exhibition: Params } = $props();
 
-  /** Settings only the one-design-at-a-time style uses. */
-  const GALLERY_ONLY = new Set(['seconds', 'closeups', 'captions']);
+  /** Settings only one of the styles uses. */
+  const STYLE_OF_SETTING: Record<string, string> = {
+    speed: 'fabric',
+    seconds: 'gallery',
+    closeups: 'gallery',
+    captions: 'gallery',
+  };
 </script>
 
 <PanelSection title="Exhibition" open={false}>
@@ -21,7 +26,7 @@
     <ParamControl
       {def}
       bind:value={exhibition[def.key]}
-      disabled={exhibition.style === 'fabric' && GALLERY_ONLY.has(def.key)}
+      disabled={def.key in STYLE_OF_SETTING && STYLE_OF_SETTING[def.key] !== exhibition.style}
     />
   {/each}
 </PanelSection>

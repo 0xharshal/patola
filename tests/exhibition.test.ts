@@ -4,6 +4,7 @@ import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
 import { applyLayout, defaultDesign } from '../src/core/design';
 import { FabricPath, fabricCentre, fabricMotion, panelDesign, panelsIn } from '../src/exhibition/fabric';
+import { FramePacer, PreparationBudget } from '../src/exhibition/pacing';
 import { defaultParams } from '../src/core/params';
 import { mulberry32 } from '../src/core/rng';
 import { designToQuery, parseUrl } from '../src/core/url';
@@ -187,6 +188,7 @@ describe('exhibition designs', () => {
     expect(state.view).toBe('exhibition');
     expect(state.exhibition).toEqual({
       style: 'fabric',
+      speed: 0.05,
       vary: 'colours',
       seconds: 90,
       closeups: false,
@@ -245,7 +247,7 @@ describe('exhibition images', () => {
 describe('endless fabric', () => {
   const screen = { width: 1920, height: 1080 };
   const scale = 3;
-  const motion = fabricMotion(screen, scale, 2);
+  const motion = fabricMotion(screen, scale, 2, 0.05);
   const fps = 30;
   /** Camera centres for `seconds` at 30 fps. */
   const path = (seconds: number, seed = 9) =>
@@ -328,11 +330,57 @@ describe('endless fabric', () => {
 
 describe('fabric path', () => {
   it('gives the same centres whether asked in order, out of order or afresh', () => {
-    const motion = fabricMotion({ width: 1920, height: 1080 }, 3, 2);
+    const motion = fabricMotion({ width: 1920, height: 1080 }, 3, 2, 0.05);
     const path = new FabricPath(motion, 4);
     const late = path.centreAt(3000);
     expect(path.centreAt(12)).toEqual(new FabricPath(motion, 4).centreAt(12)); // back in time
     expect(late).toEqual(new FabricPath(motion, 4).centreAt(3000));
     expect(fabricCentre(777, motion, 4)).toEqual(path.centreAt(777));
+  });
+});
+
+describe('frame pacing', () => {
+  /** Draws per second over 10 s on a display refreshing `hertz` times a second, with timestamp jitter. */
+  const drawsPerSecond = (target: number, hertz: number) => {
+    const pacer = new FramePacer(target);
+    const random = mulberry32(hertz);
+    let draws = 0;
+    for (let frame = 0; frame < hertz * 10; frame++)
+      if (pacer.shouldDraw((frame * 1000) / hertz + (random() - 0.5) * 0.8)) draws++;
+    return draws / 10;
+  };
+
+  it('draws at the chosen rate on 60, 120, 144 and 165 Hz displays, or at the display rate when slower', () => {
+    for (const hertz of [60, 120, 144, 165])
+      for (const target of [30, 60, 120])
+        expect(drawsPerSecond(target, hertz)).toBeCloseTo(Math.min(target, hertz), -0.5);
+  });
+
+  it('draws on every refresh when matching the display', () => {
+    expect(drawsPerSecond(Infinity, 165)).toBe(165);
+  });
+});
+
+describe('fabric speed', () => {
+  it('keeps each design on the full screen for 5 seconds at any speed, with larger panels when faster', () => {
+    const screen = { width: 1920, height: 1080 };
+    const slow = fabricMotion(screen, 3, 2, 0.01);
+    const fast = fabricMotion(screen, 3, 2, 0.12);
+    expect(fast.speed / slow.speed).toBeCloseTo(12, 6);
+    expect(fast.panel.height).toBeGreaterThan(slow.panel.height);
+    // The margin around the screen leaves room for 5 s of gliding.
+    expect((fast.panel.height - screen.height / 3) / fast.speed).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('preparation budget', () => {
+  it('gives the same work per second at 30 and 165 frames per second', () => {
+    const perSecond = (fps: number) => {
+      const budget = new PreparationBudget(18_000_000);
+      let pixels = 0;
+      for (let frame = 1; frame <= fps; frame++) pixels += budget.forFrame((frame * 1000) / fps);
+      return pixels;
+    };
+    expect(perSecond(165) / perSecond(30)).toBeCloseTo(1, 1);
   });
 });

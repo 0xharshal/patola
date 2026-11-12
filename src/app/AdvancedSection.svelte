@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import ParamControl from './ParamControl.svelte';
+  import { measureRefreshRate } from '../exhibition/pacing';
   import PanelSection from './PanelSection.svelte';
   import CanvasSize from './CanvasSize.svelte';
   import SeedField from './SeedField.svelte';
@@ -15,6 +17,13 @@
     screenPixels,
     pieceThreads,
   }: { design: Design; device: DeviceSettings; gpuName: string; screenPixels: Size; pieceThreads: Size } = $props();
+
+  /** This display's refresh rate, measured once the page has settled (helps choose the frame rate). */
+  let refreshRate: number | null = $state(null);
+  onMount(() => {
+    const timer = setTimeout(() => measureRefreshRate().then((rate) => (refreshRate = rate)), 1500);
+    return () => clearTimeout(timer);
+  });
 </script>
 
 <PanelSection title="Advanced" open={false}>
@@ -26,6 +35,7 @@
     <ParamControl {def} bind:value={() => device[def.key], (value) => Object.assign(device, { [def.key]: value })} />
   {/each}
   <p class="help">
+    {#if refreshRate}This display refreshes about {refreshRate} times a second.{/if}
     Drawing with: {gpuName || 'unknown'}. If the browser keeps using the wrong card, choose it for the browser in your
     system's graphics settings (on Linux, e.g. start the browser with <code>DRI_PRIME=1</code>).
   </p>

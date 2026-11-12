@@ -36,9 +36,11 @@ export const DEVICE_SCHEMA = [
     default: '30',
     options: [
       { value: '30', label: '30 per second (smooth on most computers)' },
-      { value: '60', label: '60 per second (needs fast graphics)' },
+      { value: '60', label: '60 per second' },
+      { value: '120', label: '120 per second (high refresh rate displays)' },
+      { value: 'display', label: 'Match the display (120, 144, 165 Hz …)' },
     ],
-    help: 'How often the moving exhibition picture is redrawn. The camera moves slowly, so 30 looks smooth and halves the work.',
+    help: 'How often the moving exhibition picture is redrawn. The camera moves slowly, so 30 looks smooth with the least work; higher rates look smoother on displays that refresh faster.',
   },
 ] as const satisfies ParamSchema;
 

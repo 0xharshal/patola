@@ -10,8 +10,9 @@
   import { TourPictures } from '../exhibition/pictures';
   import type { PatolaRenderer } from '../render/renderer';
   import { exhibitionSettings, nextDesign } from '../exhibition/settings';
-  import { FabricPath, fabricMotion, type FabricMotion } from '../exhibition/fabric';
+  import { FabricPath, fabricMotion, fabricPreparationRate, type FabricMotion } from '../exhibition/fabric';
   import { FabricPanels } from '../exhibition/fabricPanels';
+  import { FramePacer } from '../exhibition/pacing';
   import { viewFor, type Camera } from '../render/camera';
   import { getGenerator } from '../generators/registry';
   import { getLayout, patternOnly } from '../layouts/registry';
@@ -40,7 +41,7 @@
     settings: Params;
     /** Graphics card to ask for. */
     gpu: WebGLPowerPreference;
-    /** Redraws per second. */
+    /** Redraws per second; Infinity: on every display refresh. */
     fps: number;
     /** Show prerendered images of the tour, or render every frame. */
     drawing: 'images' | 'live';
@@ -117,7 +118,7 @@
    */
   let lastMotion: FabricMotion | null = null;
   const motion = $derived.by(() => {
-    const next = fabricMotion(viewport, fabricScale, frame.render.step);
+    const next = fabricMotion(viewport, fabricScale, frame.render.step, options.speed);
     if (lastMotion && JSON.stringify(lastMotion) === JSON.stringify(next)) return lastMotion;
     return (lastMotion = next);
   });
@@ -132,7 +133,15 @@
   function drawFabric(renderer: PatolaRenderer, shown: Frame) {
     if (panels?.renderer !== renderer || panels.panel !== motion.panel || panels.scale !== fabricScale) {
       panels?.dispose();
-      panels = new FabricPanels(renderer, fabricBase, options.vary, exhibitionSeed, motion.panel, fabricScale);
+      panels = new FabricPanels(
+        renderer,
+        fabricBase,
+        options.vary,
+        exhibitionSeed,
+        motion.panel,
+        fabricScale,
+        fabricPreparationRate(motion, fabricScale),
+      );
     }
     // Where the cloth will be in the next seconds (turns included), so those panels get prepared.
     const upcoming = FABRIC_LOOKAHEAD_SECONDS.map((ahead) => viewFor(fabricCamera(elapsed + ahead), viewport));
@@ -187,10 +196,10 @@
   onMount(() => {
     let last = performance.now();
     let frameId = 0;
+    const pacer = new FramePacer(fps);
     const tick = (now: number) => {
       frameId = requestAnimationFrame(tick);
-      // Draw only as often as the frame rate asks (a little early is fine: screens refresh at their own pace).
-      if (now - last < 1000 / fps - 4) return;
+      if (!pacer.shouldDraw(now)) return;
       // At most 0.1 s per frame, so a hidden tab doesn't jump ahead when it comes back.
       const seconds = Math.min(0.1, (now - last) / 1000);
       last = now;

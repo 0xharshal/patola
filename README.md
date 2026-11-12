@@ -70,9 +70,10 @@ in two styles:
 - **One design at a time**: the camera drifts calmly over each design and zooms
   in to the threads, then the next design fades in, with a short caption.
 
-Choose what changes from one design to the next and how long each stays. Space
-pauses, F switches full screen and Esc ends the exhibition; with one design at a
-time the arrow keys skip to the next or previous design. _Edit this design_ takes
+Choose what changes from one design to the next, how fast the fabric glides and
+how long each design stays. Space pauses, F switches full screen and Esc ends the
+exhibition; with one design at a time the arrow keys skip to the next or previous
+design. _Edit this design_ takes
 the design on show back to the editor. The screen stays on while it runs (on
 `https://` pages). _Copy exhibition link_ makes a link that opens straight into
 it, e.g. for a kiosk or a lobby screen ([docs/LINKS.md](docs/LINKS.md)).

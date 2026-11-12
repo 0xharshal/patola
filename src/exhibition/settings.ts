@@ -19,6 +19,16 @@ export const EXHIBITION_SCHEMA = [
     help: 'One design at a time: the camera tours each design, then the next fades in. Endless fabric: many designs side by side glide past, now one way, now another.',
   },
   {
+    key: 'speed',
+    type: 'float',
+    label: 'Fabric speed',
+    min: 0.01,
+    max: 0.12,
+    step: 0.01,
+    default: 0.05,
+    help: 'How fast the endless fabric glides, in screen heights per second. Each design still fills the screen for at least 5 seconds; faster needs more graphics memory.',
+  },
+  {
     key: 'vary',
     type: 'select',
     label: 'Next design',

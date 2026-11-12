@@ -244,7 +244,7 @@
           threadPx={render.threadPx}
           settings={exhibition}
           gpu={device.gpu}
-          fps={Number(device.fps)}
+          fps={device.fps === 'display' ? Infinity : Number(device.fps)}
           drawing={device.exhibitionDrawing}
           onExit={() => (view = 'editor')}
         />

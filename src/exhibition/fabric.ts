@@ -9,8 +9,6 @@ import { patternOnly } from '../layouts/registry';
 import type { Size } from '../layouts/types';
 import { nextDesign, type ExhibitionSettings } from './settings';
 
-/** Gliding speed in screen sizes (the shorter side) per second: calm. */
-const SPEED = 0.05;
 /** Seconds each design fills the whole screen as the cloth glides past it, at least. */
 export const FULL_SCREEN_SECONDS = 5;
 /** Radius of the curve at each turn, in screen sizes. */
@@ -40,9 +38,14 @@ export interface FabricMotion {
  * screen for FULL_SCREEN_SECONDS as it glides past, with room for the curve of a
  * turn; a whole number of design cells. `scale`: pixels per thread.
  */
-export function fabricMotion(viewport: Size, scale: number, threadsPerCell: number): FabricMotion {
+export function fabricMotion(
+  viewport: Size,
+  scale: number,
+  threadsPerCell: number,
+  screensPerSecond: number,
+): FabricMotion {
   const screen = Math.min(viewport.width, viewport.height) / scale;
-  const speed = SPEED * screen;
+  const speed = screensPerSecond * screen;
   // Room for 5 s of gliding, and for the curve of a turn (one radius).
   const margin = speed * FULL_SCREEN_SECONDS + TURN_RADIUS * screen;
   const cells = (threads: number) => Math.max(8, Math.ceil(threads / threadsPerCell)) * threadsPerCell;
@@ -139,6 +142,17 @@ export class FabricPath {
 /** Camera centre (threads) after `seconds` (see FabricPath). */
 export function fabricCentre(seconds: number, motion: FabricMotion, seed: number): [number, number] {
   return new FabricPath(motion, seed).centreAt(seconds);
+}
+
+/**
+ * Times the area the view sweeps over that panels are prepared at: the panels
+ * after a turn are all needed within a few seconds.
+ */
+const PREPARATION_HEADROOM = 36;
+
+/** Pixels of upcoming panels to render per second: in step with how fast new cloth comes into view. */
+export function fabricPreparationRate({ panel, speed }: FabricMotion, scale: number): number {
+  return PREPARATION_HEADROOM * speed * Math.max(panel.width, panel.height) * scale * scale;
 }
 
 /** Panels (column, row) overlapping the area from (x, y), width × height threads. */
