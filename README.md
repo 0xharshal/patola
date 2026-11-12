@@ -98,8 +98,13 @@ scripts/node.sh npm run preview  # serve the build on http://localhost:4173 (off
 Both servers listen on all network interfaces, so a phone, tablet or big screen on
 the same network can open `http://<this computer's IP>:5173`. Set
 `PUBLISH_ADDRESS=127.0.0.1` to keep them on this computer. Over plain `http` from
-another device the browser allows no service worker, so offline use needs
-`localhost` or HTTPS.
+another device the browser allows neither keeping the screen on nor offline use;
+for those, start the dev server with HTTPS (a self-signed certificate: accept the
+browser's warning once):
+
+```bash
+scripts/node.sh npm run dev:https  # https://<this computer's IP>:5173
+```
 
 Production image (nginx):
 

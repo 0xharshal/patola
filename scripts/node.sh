@@ -4,6 +4,7 @@
 #
 #   scripts/node.sh npm install
 #   scripts/node.sh npm run dev       # http://localhost:5173
+#   scripts/node.sh npm run dev:https # https://<this computer's IP>:5173 for phones (self-signed)
 #   scripts/node.sh npm test
 #   scripts/node.sh npm run build     # output in dist/
 #
@@ -37,7 +38,7 @@ fi
 
 # Publish each server's own port, so the dev server (5173) and preview (4173) can run together.
 address="${PUBLISH_ADDRESS:-0.0.0.0}"
-if [[ " $* " == *" dev "* ]]; then
+if [[ " $* " == *" dev "* || " $* " == *" dev:https "* ]]; then
   args+=(-p "$address:5173:5173")
 elif [[ " $* " == *" preview "* ]]; then
   args+=(-p "$address:4173:4173")
