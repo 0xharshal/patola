@@ -13,6 +13,8 @@ export interface ExportProgress {
   /** 0…1 */
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
+  /** Graphics card to ask for. */
+  gpu?: WebGLPowerPreference;
 }
 
 /** What to draw; the exporter sets the view (and a background, which never shows). */
@@ -30,10 +32,10 @@ async function renderBands(
   size: Size,
   pixelsPerThread: number,
   onBand: (rgba: Uint8Array<ArrayBuffer>, top: number, rows: number) => Promise<void> | void,
-  { onProgress, signal }: ExportProgress,
+  { onProgress, signal, gpu }: ExportProgress,
 ): Promise<void> {
   const canvas = document.createElement('canvas');
-  const renderer = new PatolaRenderer(canvas);
+  const renderer = new PatolaRenderer(canvas, gpu);
   try {
     for (let top = 0; top < size.height; top += BAND_HEIGHT) {
       const rows = Math.min(BAND_HEIGHT, size.height - top);
@@ -43,6 +45,8 @@ async function renderBands(
         renderer.draw({
           ...frame,
           background: '#000000',
+          // One lamp over the whole image, so tiles join without seams.
+          lightArea: { x: 0, y: 0, width: size.width / pixelsPerThread, height: size.height / pixelsPerThread },
           view: {
             width: columns,
             height: rows,

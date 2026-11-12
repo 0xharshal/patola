@@ -1,14 +1,11 @@
 <script lang="ts" module>
   /**
-   * Pixels rendered per CSS pixel. Capped at 2: on 3× phone screens this draws
-   * 2.25× fewer pixels with no visible difference, and the browser scales it up.
-   * Exports render at their own size and are not affected.
+   * Pixels rendered per CSS pixel while editing. Capped at 2: on 3× phone screens
+   * this draws 2.25× fewer pixels with no visible difference, and the browser
+   * scales it up. Pictures only for looking at (wallpaper, exhibition) use every
+   * screen pixel; exports render at their own size.
    */
-  const MAX_RENDER_PIXEL_RATIO = 2;
-
-  function renderPixelRatio(): number {
-    return Math.min(window.devicePixelRatio || 1, MAX_RENDER_PIXEL_RATIO);
-  }
+  const MAX_EDITING_PIXEL_RATIO = 2;
 </script>
 
 <script lang="ts">
@@ -23,6 +20,11 @@
     fitMode = 'contain',
     interactive = true,
     threadPx,
+    camera: directedCamera,
+    onresize,
+    gpu = 'default',
+    ongpu,
+    draw,
   }: {
     /** Everything to draw except the view, which this component owns. */
     frame: Omit<Frame, 'view' | 'background'>;
@@ -31,7 +33,22 @@
     interactive?: boolean;
     /** Pixels per thread at "100 %". */
     threadPx: number;
+    /** Set to steer the view from outside (exhibition); the viewer's own camera is then unused. */
+    camera?: Camera;
+    /** Called with the viewport size in device pixels, and device pixels per CSS pixel. */
+    onresize?: (viewport: Size, pixelRatio: number) => void;
+    /** Graphics card to ask for; read once (remount the viewer to switch). */
+    gpu?: WebGLPowerPreference;
+    /** Called with the name of the graphics card that draws. */
+    ongpu?: (name: string) => void;
+    /** Draw the frame some other way (exhibition images) instead of rendering the weave. */
+    draw?: (renderer: PatolaRenderer, frame: Frame) => void;
   } = $props();
+
+  function renderPixelRatio(): number {
+    const screenRatio = window.devicePixelRatio || 1;
+    return interactive ? Math.min(screenRatio, MAX_EDITING_PIXEL_RATIO) : screenRatio;
+  }
 
   let stage: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -41,6 +58,7 @@
   /** Viewport in device pixels. */
   let viewport: Size = $state({ width: 1, height: 1 });
   let camera: Camera = $state({ centreX: 0, centreY: 0, scale: 1 });
+  const shownCamera = $derived(directedCamera ?? camera);
   /** True while the camera shows the whole piece; it then follows resizes. */
   let fitted = $state(true);
 
@@ -68,7 +86,10 @@
   });
 
   $effect(() => {
-    renderer?.draw({ ...frame, background, view: viewFor(camera, viewport) });
+    if (!renderer) return;
+    const full: Frame = { ...frame, background, view: viewFor(shownCamera, viewport) };
+    if (draw) draw(renderer, full);
+    else renderer.draw(full);
   });
 
   function readBackground() {
@@ -84,7 +105,8 @@
 
   onMount(() => {
     try {
-      renderer = new PatolaRenderer(canvas);
+      renderer = new PatolaRenderer(canvas, gpu);
+      ongpu?.(renderer.gpuName());
     } catch (problem) {
       error = problem instanceof Error ? problem.message : String(problem);
     }
@@ -94,6 +116,7 @@
         width: Math.max(1, Math.round(entry.contentRect.width * dpr)),
         height: Math.max(1, Math.round(entry.contentRect.height * dpr)),
       };
+      onresize?.(viewport, dpr);
     });
     observer.observe(stage);
     readBackground();

@@ -5,18 +5,24 @@
   import PanelSection from './PanelSection.svelte';
   import LayoutSection from './LayoutSection.svelte';
   import WeaveSection from './WeaveSection.svelte';
-  import SizeSection from './SizeSection.svelte';
+  import ExhibitionSection from './ExhibitionSection.svelte';
+  import AdvancedSection from './AdvancedSection.svelte';
+  import type { DeviceSettings } from '../core/deviceSettings';
   import ZonePattern from './ZonePattern.svelte';
   import VersionPicker from './VersionPicker.svelte';
   import { getLayout, patternOnly } from '../layouts/registry';
-  import { BODY_ZONE, type Size } from '../layouts/types';
+  import { BODY_ZONE, holdsOneMotif, type Size } from '../layouts/types';
   import { SLOT_COUNT } from '../palettes/presets';
   import { zoneFill, type Design } from '../core/design';
+  import type { Params } from '../core/params';
   import { randomizeColours, randomizePattern, surprise } from '../core/randomize';
 
   /** The control panel: a side panel on desktop, a bottom sheet on phones. */
   let {
     design = $bindable(),
+    exhibition = $bindable(),
+    device = $bindable(),
+    gpuName,
     screenPixels,
     pieceThreads,
     canUndo,
@@ -26,13 +32,18 @@
     onFocusZone,
     onShowAll,
     onCopyLink,
-    onOpenWallpaper,
+    onStartExhibition,
+    onCopyExhibitionLink,
     onExport,
     onInstall,
     onLearn,
     onOpenDesignFile,
   }: {
     design: Design;
+    exhibition: Params;
+    device: DeviceSettings;
+    /** Graphics card drawing, as the browser names it. */
+    gpuName: string;
     screenPixels: Size;
     pieceThreads: Size;
     canUndo: boolean;
@@ -42,7 +53,8 @@
     onFocusZone: (zoneId: string) => void;
     onShowAll: () => void;
     onCopyLink: () => Promise<boolean>;
-    onOpenWallpaper: () => void;
+    onStartExhibition: () => void;
+    onCopyExhibitionLink: () => Promise<boolean>;
     onExport: () => void;
     /** Install as an app; null when the browser doesn't offer it (or it is installed). */
     onInstall: (() => Promise<void>) | null;
@@ -52,7 +64,8 @@
 
   /** Phones only: how much of the screen the bottom sheet takes. */
   let sheet: 'half' | 'full' | 'hidden' = $state('half');
-  let copied = $state(false);
+  /** Which link was just copied, for a moment's feedback on its button. */
+  let copied: 'design' | 'exhibition' | null = $state(null);
   /** Palette slots kept when shuffling or randomising colours. */
   let locked: boolean[] = $state(Array(SLOT_COUNT).fill(false));
   let selectedZone = $state(BODY_ZONE);
@@ -69,9 +82,11 @@
     design.paletteId = null;
   }
 
-  async function copyLink() {
-    copied = await onCopyLink();
-    setTimeout(() => (copied = false), 1600);
+  async function copyLink(which: 'design' | 'exhibition') {
+    const done = await (which === 'design' ? onCopyLink() : onCopyExhibitionLink());
+    if (!done) return;
+    copied = which;
+    setTimeout(() => (copied = null), 1600);
   }
 </script>
 
@@ -119,7 +134,12 @@
     <PanelSection title={isPatternOnly ? 'Pattern' : `Pattern: ${activeZone.name}`}>
       {#if activeZone.about}<p class="help">{activeZone.about}</p>{/if}
       {#key activeZone.id + design.layout}
-        <ZonePattern fill={activeFill} palette={design.palette} onUseColours={useColours} />
+        <ZonePattern
+          fill={activeFill}
+          palette={design.palette}
+          onUseColours={useColours}
+          oneMotif={holdsOneMotif(activeZone, design.layoutSettings)}
+        />
       {/key}
     </PanelSection>
 
@@ -129,13 +149,24 @@
 
     <WeaveSection bind:design />
 
-    <SizeSection bind:design {screenPixels} {pieceThreads} />
+    <ExhibitionSection bind:exhibition />
+
+    <AdvancedSection bind:design bind:device {gpuName} {screenPixels} {pieceThreads} />
 
     <div class="actions">
       <button class="button primary" onclick={onExport}>Export…</button>
+      <button class="button primary" onclick={onStartExhibition}>Start exhibition</button>
       <FileButton label="Open design file…" accept=".json,application/json" onFile={onOpenDesignFile} />
-      <button class="button" onclick={copyLink}>{copied ? 'Link copied' : 'Copy link'}</button>
-      <button class="button" onclick={onOpenWallpaper}>Open as wallpaper</button>
+      <button class="button" onclick={() => copyLink('design')}
+        >{copied === 'design' ? 'Link copied' : 'Copy link'}</button
+      >
+      <button
+        class="button"
+        onclick={() => copyLink('exhibition')}
+        title="A link that opens straight into this exhibition, e.g. for a kiosk"
+      >
+        {copied === 'exhibition' ? 'Link copied' : 'Copy exhibition link'}
+      </button>
       {#if onInstall}
         <button class="button" onclick={onInstall} title="Use it like an app, also offline">Install app</button>
       {/if}

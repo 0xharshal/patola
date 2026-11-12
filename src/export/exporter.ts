@@ -13,6 +13,8 @@ export interface ExportSource {
   composition: Composition;
   frame: FrameWithoutView;
   pieceThreads: Size;
+  /** Graphics card to ask for. */
+  gpu?: WebGLPowerPreference;
 }
 
 export interface ExportJob {
@@ -38,9 +40,10 @@ export const FORMAT_LABELS: Record<ExportFormat, string> = {
 export async function runExport(
   job: ExportJob,
   source: ExportSource,
-  progress: ExportProgress = {},
+  progressOptions: ExportProgress = {},
 ): Promise<ExportResult> {
   const { design, composition, frame, pieceThreads } = source;
+  const progress = { ...progressOptions, gpu: source.gpu };
   const baseName = `patola-${design.layout}-${design.generator}-${design.seed}`;
   const size = imageSize(pieceThreads, job.pixelsPerThread);
   const sizeSuffix = `${size.width}x${size.height}`;

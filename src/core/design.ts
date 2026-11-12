@@ -64,7 +64,36 @@ export const RENDER_SCHEMA = [
     default: 0.15,
     help: 'How far each crosswise (weft) thread is shifted',
   },
-  { key: 'sheen', type: 'float', label: 'Silk sheen', min: 0, max: 1, step: 0.01, default: 0.35 },
+  {
+    key: 'sheen',
+    type: 'float',
+    label: 'Silk sheen',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    default: 0.35,
+    help: 'Light gliding along the silk fibres as each thread rises over and dives under the others',
+  },
+  {
+    key: 'light',
+    type: 'int',
+    label: 'Light from',
+    min: 0,
+    max: 355,
+    step: 5,
+    default: 315,
+    help: 'Where the lamp is, in degrees: 0 above, 90 right, 180 below, 270 left. The silk reflects it, so the sheen moves with it and as you move around the cloth.',
+  },
+  {
+    key: 'texture',
+    type: 'float',
+    label: 'Yarn texture',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    default: 0.6,
+    help: 'Twisted silk filaments, uneven threads and dye uptake. Zoom in to see it.',
+  },
   {
     key: 'threads',
     type: 'select',
@@ -87,8 +116,11 @@ export function renderSettings(render: Params): RenderSettings {
 }
 
 export const MIN_SIZE = 64;
-/** Largest pixel size for wallpapers and saved images, for now; tiled export comes later. */
-export const MAX_SIZE = 8192;
+/**
+ * Largest canvas side in pixels for a single pattern. The design grid has at most
+ * MAX_CELLS_PER_SIDE cells per side, so small thread sizes allow less (see maxCanvasSide in compose.ts).
+ */
+export const MAX_SIZE = 16384;
 
 export interface Design extends ZoneFill {
   seed: number;

@@ -6,7 +6,7 @@
  */
 import { quantizeImage } from '../palettes/extract';
 import { readImagePixels } from '../core/imageFile';
-import { newId, readStoredList, writeStoredList } from '../custom/storage';
+import { newId, readStoredList, writeStored } from '../custom/storage';
 import { base64ToBytes, bytesToBase64 } from '../core/base64';
 import { createChangeSignal } from '../core/changeSignal';
 import { BUILT_IN_MOTIFS } from './builtin';
@@ -19,6 +19,8 @@ export interface Motif extends MotifGrid {
   colours: string[];
   builtIn?: boolean;
   about?: string;
+  /** False for signs that must never be mirrored (saathiya, Om). */
+  mirrorable?: boolean;
 }
 
 interface StoredMotif extends Omit<Motif, 'slots'> {
@@ -59,7 +61,7 @@ function loadUserMotifs(): Motif[] {
 
 /** Persist the user's motifs; false if storage is full or unavailable (they stay usable until reload). */
 function saveUserMotifs(): boolean {
-  const ok = writeStoredList(
+  const ok = writeStored(
     STORAGE_KEY,
     loadUserMotifs().map((motif) => ({ ...motif, slots: bytesToBase64(motif.slots) })),
   );

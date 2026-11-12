@@ -1,4 +1,4 @@
-import { newId, readStoredList, writeStoredList } from '../custom/storage';
+import { newId, readStoredList, writeStored } from '../custom/storage';
 import { normalizeHex, SLOT_COUNT } from './presets';
 
 /** User palettes, kept in this browser only (localStorage). */
@@ -28,7 +28,7 @@ export function loadSavedPalettes(): SavedPalette[] {
 }
 
 export function storeSavedPalettes(list: SavedPalette[]): boolean {
-  return writeStoredList(STORAGE_KEY, list);
+  return writeStored(STORAGE_KEY, list);
 }
 
 export const newPaletteId = (): string => newId(USER_PALETTE_PREFIX);

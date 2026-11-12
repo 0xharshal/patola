@@ -1,6 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { APP_VERSION, loadVersionIndex, releaseUrl, siteLocation, type VersionIndex } from './versions';
+  import {
+    APP_VERSION,
+    loadVersionIndex,
+    releaseUrl,
+    SOURCE_CODE_URL,
+    siteLocation,
+    type VersionIndex,
+  } from './versions';
 
   /** Shows this build's version and, on the published site, lets you open any released version. */
   const site = siteLocation(location.pathname);
@@ -34,6 +41,9 @@
   {:else}
     <p class="help">Version {APP_VERSION}</p>
   {/if}
+  <p class="help">
+    Free software (GPL). <a href={SOURCE_CODE_URL} target="_blank" rel="noopener">Source code on GitHub</a>
+  </p>
 </div>
 
 <style>

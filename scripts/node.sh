@@ -4,10 +4,14 @@
 #
 #   scripts/node.sh npm install
 #   scripts/node.sh npm run dev       # http://localhost:5173
+#   scripts/node.sh npm run dev:https # https://<this computer's IP>:5173 for phones (self-signed)
 #   scripts/node.sh npm test
 #   scripts/node.sh npm run build     # output in dist/
 #
-# Env overrides: CONTAINER_ENGINE=podman|docker, NODE_IMAGE=<image>
+# Servers listen on all interfaces, so other devices on the network can open them
+# (http://<this machine's IP>:5173). PUBLISH_ADDRESS=127.0.0.1 keeps them local.
+#
+# Env overrides: CONTAINER_ENGINE=podman|docker, NODE_IMAGE=<image>, PUBLISH_ADDRESS=<ip>
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,10 +37,11 @@ if [[ "$ENGINE" == docker ]]; then
 fi
 
 # Publish each server's own port, so the dev server (5173) and preview (4173) can run together.
-if [[ " $* " == *" dev "* ]]; then
-  args+=(-p 127.0.0.1:5173:5173)
+address="${PUBLISH_ADDRESS:-0.0.0.0}"
+if [[ " $* " == *" dev "* || " $* " == *" dev:https "* ]]; then
+  args+=(-p "$address:5173:5173")
 elif [[ " $* " == *" preview "* ]]; then
-  args+=(-p 127.0.0.1:4173:4173)
+  args+=(-p "$address:4173:4173")
 fi
 
 exec "$ENGINE" "${args[@]}" "$IMAGE" "$@"

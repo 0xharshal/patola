@@ -1,6 +1,6 @@
 /**
  * Readable URL parameters <-> Design. The parameter reference for users lives
- * in README.md ("URL parameters"); keep the two in sync.
+ * in docs/LINKS.md; keep the two in sync.
  *
  * Invalid or unknown values are ignored, never fatal.
  */
@@ -13,10 +13,12 @@ import type { ZoneFill } from '../layouts/types';
 import { getPalette, parseHexList } from '../palettes/presets';
 import { randomizeColours, randomizePattern, surprise } from './randomize';
 import { MAX_EXPORT_SIDE } from '../export/sizes';
+import { EXHIBITION_SCHEMA } from '../exhibition/settings';
 
 export const URL_VERSION = 1;
 
-export type View = 'editor' | 'wallpaper';
+export type View = 'editor' | 'wallpaper' | 'exhibition';
+const VIEWS: View[] = ['editor', 'wallpaper', 'exhibition'];
 
 export type ExportFormat = 'png' | 'jpg' | 'svg' | 'design';
 export const EXPORT_FORMATS: ExportFormat[] = ['png', 'jpg', 'svg', 'design'];
@@ -32,6 +34,8 @@ export interface UrlState {
   design: Design;
   view: View;
   download: DownloadRequest | null;
+  /** Exhibition settings (see EXHIBITION_SCHEMA), also read when the page opens in the editor. */
+  exhibition: Params;
 }
 
 /** `random=pattern,colours,seed` or `random=all`: what to re-roll on every load. */
@@ -57,11 +61,13 @@ const RENDER_URL_NAMES: Record<string, string> = {
   warpJitter: 'warp',
   weftJitter: 'weft',
   sheen: 'sheen',
+  texture: 'texture',
+  light: 'light',
   threads: 'threads',
 };
 
 /** URL prefixes for the parameter groups. */
-const PREFIX = { body: 'p.', layout: 'l.', zone: 'z.' };
+const PREFIX = { body: 'p.', layout: 'l.', zone: 'z.', exhibition: 'x.' };
 
 /** All query values whose name starts with `prefix`, keyed by the rest of the name. */
 function withPrefix(query: URLSearchParams, prefix: string): Record<string, string> {
@@ -161,11 +167,13 @@ export function parseUrl(search: string): UrlState {
       }
     : null;
 
-  const view: View = query.get('view') === 'wallpaper' ? 'wallpaper' : 'editor';
-  return { design, view, download };
+  const view = VIEWS.find((candidate) => candidate === query.get('view')) ?? 'editor';
+  const exhibition = readParams(EXHIBITION_SCHEMA, {}, withPrefix(query, PREFIX.exhibition));
+  return { design, view, download, exhibition };
 }
 
-export function designToQuery(design: Design, view: View = 'editor'): string {
+/** The share query of a design; exhibition links also carry the exhibition settings. */
+export function designToQuery(design: Design, view: View = 'editor', exhibition?: Params): string {
   const query = new URLSearchParams();
   const layout = getLayout(design.layout);
   query.set('v', String(URL_VERSION));
@@ -191,6 +199,7 @@ export function designToQuery(design: Design, view: View = 'editor'): string {
   }
   for (const def of RENDER_SCHEMA)
     query.set(RENDER_URL_NAMES[def.key] ?? def.key, formatValue(def, design.render[def.key]));
-  if (view === 'wallpaper') query.set('view', 'wallpaper');
+  if (view !== 'editor') query.set('view', view);
+  if (view === 'exhibition' && exhibition) writeParams(query, PREFIX.exhibition, EXHIBITION_SCHEMA, exhibition);
   return query.toString();
 }

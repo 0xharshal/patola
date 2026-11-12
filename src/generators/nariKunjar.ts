@@ -1,7 +1,8 @@
 import type { BoolParam } from '../core/params';
 import { getMotif } from '../motifs/library';
-import { HATHI, KALASH, NARI, POPAT, VRIKSHA, type BuiltInMotif } from '../motifs/builtin';
+import { HANSA, HATHI, KALASH, MOR, NARI, POPAT, VRIKSHA, type BuiltInMotif } from '../motifs/builtin';
 import { motifSlotAt } from './imageMotif';
+import { MIRROR_ALTERNATE_PARAM } from './commonParams';
 import { fillGrid, positiveModulo } from './shapes';
 import { SLOT, defineGenerator } from './types';
 
@@ -12,6 +13,8 @@ const MOTIF_TOGGLES = [
   { motif: POPAT, param: { key: 'parrot', type: 'bool', label: 'Parrots', default: true } },
   { motif: KALASH, param: { key: 'vase', type: 'bool', label: 'Flower vases', default: true } },
   { motif: VRIKSHA, param: { key: 'tree', type: 'bool', label: 'Trees', default: false } },
+  { motif: MOR, param: { key: 'peacock', type: 'bool', label: 'Peacocks', default: false } },
+  { motif: HANSA, param: { key: 'swan', type: 'bool', label: 'Swans', default: false } },
 ] as const satisfies readonly { motif: BuiltInMotif; param: BoolParam }[];
 
 const LATTICE_WIDTH: Record<string, number> = { none: 0, single: 1, double: 3 };
@@ -58,13 +61,7 @@ export const nariKunjar = defineGenerator({
       default: 4,
       help: 'Ground around each motif, in cells',
     },
-    {
-      key: 'mirror',
-      type: 'bool',
-      label: 'Mirror alternate',
-      default: true,
-      help: 'Every other column faces the other way',
-    },
+    MIRROR_ALTERNATE_PARAM,
   ],
 
   generate(params, { width, height }): Uint8Array {

@@ -1,154 +1,114 @@
 # Patola Playground
 
-An educational, browser-based playground for **Patan double-ikat patola**, the
-traditional silk textile of Gujarat. Generate patterns, lay them out as a saree,
-dupatta, gharchola grid or rug, recolour them, and see how tie-dyed warp and weft
-threads produce patola's soft, feathered edges.
+A playground for **Patan double-ikat patola**, the silk textile of Gujarat in which
+both the lengthwise (warp) and crosswise (weft) threads are tie-dyed before
+weaving. Create patola designs, lay them out as a saree, dupatta, gharchola or
+rug, recolour them, and see how the dyed threads produce patola's soft,
+feathered edges, right down to the single silk thread.
 
-Everything renders in your browser with WebGL2. There is no server-side code;
-the build is a static folder you can host anywhere. Roadmap and design
-decisions: [PLAN.md](PLAN.md).
+It is made for learning and for design inspiration, and runs entirely in your
+browser: no sign-up, nothing to install, and it works offline once opened.
 
-## Using it
+**Open it:** <https://0xharshal.github.io/patola/> · Source: <https://github.com/0xharshal/patola>
 
-- **Layout**: pick a piece (pattern only, saree, dupatta, gharchola grid, rug).
-  Each part of the piece (body, borders, pallu, …) has its own pattern: choose
-  a part to edit it, or use its zoom button to look at it.
-- **Rotation**: every pattern has a Rotation setting. At 45° a square grid becomes a
-  diagonal grid; edges stay stepped, as they would be when tied on the threads.
-- **Viewing**: drag to move, scroll or pinch to zoom, double-click to see everything.
-- **Weave**: _Flat_ shows the design grid, _Woven_ the threads, _Realistic_ adds
-  the ikat bleed and thread shifts.
-- **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
-  a photo, and palettes saved in your browser.
-- **Learn**: a short guide to patola and double ikat. Its buttons show what it
-  describes, e.g. the warp or weft threads on their own.
-- **Show threads** (Weave section): the woven cloth, or only the dyed warp or
-  weft threads, to see how each set carries part of the pattern.
-- **Undo / redo**: buttons in the panel, or Ctrl+Z / Ctrl+Shift+Z.
-- **Phones**: the controls are a bottom sheet; tap its handle for full height.
-- **Versions**: at the bottom of the panel, pick any released version; your current
-  design opens in it. Each version has its own address (`…/v1.2.0/`), can be
-  installed on its own and keeps working offline.
-- **Install / offline**: it's an installable web app. Use _Install app_ in the
-  panel (Chrome, Edge, Android) or _Share → Add to Home Screen_ (Safari, iOS).
-  Once loaded it works offline; new versions are offered with a _Reload_ button.
-- **Export…**: PNG or JPG at any size (screen, 4K, A4 / A3 / A2 at 300 dpi, or a
-  custom long side up to 30,000 px; PNG is streamed, so it isn't limited by canvas
-  size), SVG of the flat design, or a **design file** (`.patola.json`).
-- **Open design file…**: reopens a design file, including the motifs and code
-  it carries (code still waits for _Run_).
-- **Copy link**: the current design as a link. Long links (e.g. with code)
-  are copied in compact form (`?d=…`).
+## Features
 
-### Your own patterns and motifs
+- **Patterns made by algorithms**, each with its own settings: navratna, phool
+  (flowers), pan (leaves), chhabadi, ratan chowk, concentric diamonds, chowkdi,
+  stripes, borders, the figurative Nari Kunjar (women and elephants), wheels
+  (Ashoka chakra, charkha, concentric circles) and symbols.
+- **Symbols and figures**: diya, saathiya, peacock, mango, kite, dandiya, Om,
+  trishul, bow and arrow, swan, charkha, plus elephants, parrots, dancers, vases
+  and trees. They are drawn from shapes, so they stay crisp at any size.
+- **Whole pieces**: a single pattern, saree, dupatta, gharchola grid or rug, each
+  part (body, borders, pallu, …) with its own pattern.
+- **Any canvas size** for a single pattern: your screen, ready-made sizes (Full HD
+  to 8K, phone and tablet wallpapers, square, social posts, banners, A4 to A2
+  print) or your own width and height, portrait or landscape.
+- **Realistic cloth**: threads crossing over and under, shifted bundles of dyed
+  threads, dye creeping past the ties, twisted silk filaments and a sheen that
+  moves with the light. Look at the warp or weft threads on their own to see how
+  each carries half the design.
+- **Colours**: eleven traditional palettes, your own colours, colours taken from a
+  photo, and palettes saved for later.
+- **Exhibition**: a full-screen slideshow for a big screen or a phone, either one
+  design at a time, toured from the whole piece down to single threads, or an
+  endless fabric of many designs gliding past.
+- **Save and share**: PNG or JPG at any size (up to 30,000 pixels and print sizes),
+  SVG, design files, and links that open exactly the same design.
+- **Your own designs**: draw motifs, turn your own images into motifs, or write a
+  little code for a new pattern.
+- **Learn**: a short guide to patola and double ikat, with buttons that show what
+  it explains.
+- **Installable**: works like an app on phones, tablets and computers, also offline.
 
-- **Custom code** (motif list → _Custom code_): write a JavaScript function
-  `cell(x, y, info)` that returns a palette slot (0 ground, 1 primary,
-  2 secondary, 3 accent, 4 outline, 7 zari gold) for every cell. `info` has
-  `width`, `height`, `seed` and a seeded `random()`. It runs in a separate worker
-  and is stopped after 4 seconds. Code that arrives in a shared link is shown
-  but **not run until you press Run**.
-- **Picture motifs** (motif list → _Picture motif_): repeat a built-in motif
-  (elephant, parrot, dancer, flower vase, tree) or your own. _Nari Kunjar_ puts
-  the built-in figures together in the classic lattice of squares.
-  - _Upload image…_: a picture is reduced to the palette slots so it recolours
-    and weaves like everything else; a transparent background stays ground.
-  - _Draw new_ / _Edit_: the grid editor (paint, fill, pick, mirror while
-    drawing, flip, resize, undo). Built-in motifs are edited as a copy.
-  - _Export file_ / _Import file_ in the editor: motifs as readable JSON, one
-    character per cell (`.` ground, `1` primary, `2` secondary, `3` accent,
-    `#` outline, `Z` zari).
-  - Your motifs stay in your browser (localStorage): a shared link names the
-    motif but can't carry it; export a file to share it.
+## How to use it
 
-## Building (container, nothing installed on the host)
+1. **Start**: open the page. A design is shown; _Surprise me_ makes a new one,
+   _Shuffle pattern_ and _Shuffle colours_ change one part.
+2. **Choose a piece** under _Layout_: pick a part of the piece (body, border,
+   pallu, …) to change its pattern, or its zoom button to look at it.
+3. **Change the pattern**: pick a motif and move its sliders. Every pattern can
+   be turned (_Rotation_); at 45° a square grid becomes a diagonal one.
+4. **Colours**: pick a palette, change single colours (lock the ones you like
+   before shuffling), or take colours from a photo.
+5. **Weave**: _Flat_ shows the design, _Woven_ the threads, _Realistic_ the cloth
+   as it comes off the loom. Drag to move, scroll or pinch to zoom, double-click
+   to see everything; zoom in close to see the silk.
+6. **Canvas size** (single patterns): under _Advanced_, pick a ready-made size or
+   type your own; ⇄ switches between portrait and landscape.
+7. **Keep it**: _Export…_ saves an image or a design file; _Copy link_ copies a
+   link to share. _Undo_ and _Redo_ (Ctrl+Z, Ctrl+Shift+Z) are at the top.
 
-All Node tooling runs in a container via [`scripts/node.sh`](scripts/node.sh)
-(Podman, or Docker if Podman isn't installed).
+### Exhibition
 
-```bash
-scripts/node.sh npm install      # once
-scripts/node.sh npm run dev      # dev server on http://localhost:5173
-scripts/node.sh npm test         # unit tests
-scripts/node.sh npm run lint     # formatting (Prettier) and lint rules (ESLint)
-scripts/node.sh npm run format   # fix formatting
-scripts/node.sh npm run build    # type-check + build into dist/
-scripts/node.sh npm run preview  # serve the build on http://localhost:4173 (offline/PWA testing)
-```
+Press _Start exhibition_ (next to _Export…_). Its settings are under _Exhibition_,
+in two styles:
 
-Production image (nginx):
+- **Endless fabric** (the default): a patchwork of designs glides past, now left,
+  now right, up or down; each design fills the whole screen for a while.
+- **One design at a time**: the camera drifts calmly over each design and zooms
+  in to the threads, then the next design fades in, with a short caption.
 
-```bash
-podman build -t patola-playground -f Containerfile .
-podman run --rm -p 8080:80 patola-playground   # http://localhost:8080
-```
+Choose what changes from one design to the next, how fast the fabric glides and
+how long each design stays. Space pauses, F switches full screen and Esc ends the
+exhibition; with one design at a time the arrow keys skip to the next or previous
+design. _Edit this design_ takes
+the design on show back to the editor. The screen stays on while it runs (on
+`https://` pages). _Copy exhibition link_ makes a link that opens straight into
+it, e.g. for a kiosk or a lobby screen ([docs/LINKS.md](docs/LINKS.md)).
 
-Or copy `dist/` to any static host (nginx, …). Asset paths are relative, so it
-works from a sub-folder too.
+### Your own motifs and patterns
 
-### Releases on GitHub Pages
+In the motif list, _Picture motif_ repeats a built-in motif or your own: upload
+an image (it is reduced to the palette colours, so it recolours like everything
+else) or draw one in the grid editor. _Custom code_ runs a small function of
+yours for every cell; code from a shared link only runs after you press _Run_.
+Details: [docs/CUSTOM-CONTENT.md](docs/CUSTOM-CONTENT.md).
 
-Only tagged releases are published. Pushes to `main` and pull requests are
-checked (lint, tests, build) by [`ci.yml`](.github/workflows/ci.yml); a version
-tag runs [`release.yml`](.github/workflows/release.yml):
+### Phones, tablets and the app
 
-```bash
-git tag v1.2.0
-git push origin v1.2.0
-```
+On phones the controls are a sheet at the bottom; tap its handle to make it
+larger. To install the app, use _Install app_ in the panel (Chrome, Edge,
+Android) or _Share → Add to Home Screen_ (Safari on iPhone and iPad). New
+versions are offered with a _Reload_ button, and every earlier version stays
+available under _Version_ at the bottom of the panel.
 
-Every release stays online in its own folder, so a version can be pinned:
+_Advanced_ (bottom of the panel) has the canvas size, and settings for this device
+only: which graphics card to use, how the exhibition draws, and its frame rate.
 
-| Address                                         | Serves                    |
-| ----------------------------------------------- | ------------------------- |
-| `https://<user>.github.io/<repo>/`              | the newest stable release |
-| `https://<user>.github.io/<repo>/v1.2.0/`       | exactly v1.2.0, forever   |
-| `https://<user>.github.io/<repo>/versions.json` | the list of releases      |
+## Browsers
 
-Pre-releases (`v1.3.0-rc.1`) get a folder but don't replace the newest release,
-and a published version is never overwritten. Publishing is done by
-[`scripts/publish-pages.sh`](scripts/publish-pages.sh) on the `gh-pages` branch.
-One-time setup: repository _Settings → Pages → Source: Deploy from a branch_,
-branch `gh-pages`, folder `/ (root)` (the branch appears after the first release).
+Current Chrome, Edge, Firefox and Safari (15 or later), on computers, phones and
+tablets. The browser needs WebGL2, which all of these have.
 
-## URL parameters
+## More
 
-Every design is a URL, so links can be shared and the page works as a wallpaper
-generator. The address bar updates as you edit. Invalid values are ignored.
-
-| Parameter                        | Example                                                                                                                                 | Meaning                                                                                                                                                                                                  |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout`                         | `saree`, `dupatta`, `gharchola`, `rug`                                                                                                  | Piece layout (omit for a single pattern)                                                                                                                                                                 |
-| `l.<setting>`                    | `l.across=180`                                                                                                                          | Layout setting (width, border share, …)                                                                                                                                                                  |
-| `gen`                            | `navratna`, `phool`, `pan`, `chhabadi`, `ratan-chowk`, `diamonds`, `chowkdi`, `stripes`, `kinar`, `nari-kunjar`, `image`, `custom-code` | Pattern of the body                                                                                                                                                                                      |
-| `p.<param>`                      | `p.repeat=24`                                                                                                                           | Setting of the body pattern                                                                                                                                                                              |
-| `z.<part>`                       | `z.pallu=phool`                                                                                                                         | Pattern of another part (`border`, `pallu`, `band`, `end`, `cellB`, `guard`, `corner`)                                                                                                                   |
-| `z.<part>.<param>`               | `z.pallu.repeat=30`                                                                                                                     | Setting of that part's pattern                                                                                                                                                                           |
-| `seed`                           | `42`, `random`                                                                                                                          | Randomness for thread drift; `random` = new on every load                                                                                                                                                |
-| `palette`                        | `madder-indigo` or `8b1a1a,1f3a6b,e8b923`                                                                                               | Preset id or hex colours (no `#`). Presets: `madder-indigo`, `turmeric-black`, `parrot-green`, `ivory-maroon`, `jewel`, `vintage`, `pomegranate`, `saffron-purple`, `indigo-ivory`, `teal-coral`, `mono` |
-| `mode`                           | `flat`, `woven`, `realistic`                                                                                                            | Render mode                                                                                                                                                                                              |
-| `w`, `h`                         | `1920`, `1080`                                                                                                                          | Image size in px for a single pattern (64–8192); omit to match the screen                                                                                                                                |
-| `thread`                         | `3`                                                                                                                                     | Thread width in pixels                                                                                                                                                                                   |
-| `step`                           | `2`                                                                                                                                     | Threads per design cell                                                                                                                                                                                  |
-| `bleed`, `warp`, `weft`, `sheen` | `0.3`                                                                                                                                   | Ikat bleed, warp / weft shift, silk sheen (0–1)                                                                                                                                                          |
-| `threads`                        | `both`, `warp`, `weft`                                                                                                                  | Show the woven cloth or one set of dyed threads                                                                                                                                                          |
-| `view`                           | `wallpaper`                                                                                                                             | Full-screen picture, no controls                                                                                                                                                                         |
-| `random`                         | `pattern,colours,seed` or `all`                                                                                                         | Re-roll these on every load (great with `view=wallpaper`)                                                                                                                                                |
-| `download`                       | `png`, `jpg`, `svg`, `design`                                                                                                           | Export as soon as the page has loaded                                                                                                                                                                    |
-| `size`                           | `4000`                                                                                                                                  | Long side in px for `download` (default: at thread size)                                                                                                                                                 |
-| `d`                              | `d=7dZN…`                                                                                                                               | Compact form of all the above; parameters next to it override it                                                                                                                                         |
-
-A wallpaper that changes on every load, and a link that downloads a 4000 px PNG:
-
-```
-?view=wallpaper&gen=navratna&palette=jewel&random=pattern,colours,seed
-?layout=saree&download=png&size=4000
-```
-
-## Browser support
-
-Needs WebGL2: current Chrome, Edge, Firefox, and Safari 15+ (desktop, iOS, Android).
+- [docs/LINKS.md](docs/LINKS.md): everything a link can say, for wallpapers,
+  kiosks and downloads.
+- [docs/CUSTOM-CONTENT.md](docs/CUSTOM-CONTENT.md): custom code and motif files.
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): building, running and releasing.
+- [PLAN.md](PLAN.md): roadmap and design decisions.
 
 ## License
 

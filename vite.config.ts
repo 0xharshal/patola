@@ -1,15 +1,19 @@
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 const THEME_COLOUR = '#8f1d21';
 const BACKGROUND_COLOUR = '#f6f1e7';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // Relative base so the build works from any sub-path (GitHub Pages, nginx folder).
   base: './',
   plugins: [
     svelte(),
+    // `npm run dev:https`: a self-signed certificate, so phones and other devices on the
+    // network get a secure page (needed to keep the screen awake and for offline use).
+    mode === 'https' && basicSsl(),
     // Installable app that works offline: a manifest plus a service worker that
     // pre-caches the built files. Updates are offered to the user (see src/app/pwa.ts).
     VitePWA({
@@ -50,4 +54,4 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     environment: 'node',
   },
-});
+}));

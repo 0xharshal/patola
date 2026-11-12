@@ -4,6 +4,7 @@ import { mulberry32 } from '../src/core/rng';
 import { randomParams } from '../src/core/randomize';
 import { GENERATORS } from '../src/generators/registry';
 import { SLOT_COUNT } from '../src/palettes/presets';
+import { ZARI_SLOT } from '../src/generators/types';
 
 const context = (width: number, height: number) => ({ width, height, random: mulberry32(7), seed: 7 });
 
@@ -14,7 +15,8 @@ describe('generators', () => {
       const first = generator.generate(params, context(97, 61));
       expect(first).toHaveLength(97 * 61);
       expect(first).toEqual(generator.generate(params, context(97, 61)));
-      expect(Math.max(...first)).toBeLessThan(SLOT_COUNT);
+      // Palette slots, or zari (gold thread, rendered as metal).
+      expect(first.every((slot) => slot < SLOT_COUNT || slot === ZARI_SLOT)).toBe(true);
       if (!generator.userContent) expect(new Set(first).size).toBeGreaterThan(2); // a real pattern
     });
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BUILT_IN_MOTIFS } from '../src/motifs/builtin';
+import { SYMBOLS, symbolGrid } from '../src/motifs/symbols';
+import { getGenerator } from '../src/generators/registry';
+import { defaultParams } from '../src/core/params';
+import { mulberry32 } from '../src/core/rng';
 import { motifFromFile, motifToFile, motifToRows, parseMotifRows } from '../src/motifs/format';
 import { blankGrid, cellsOnLine, flipGrid, floodFill, NO_MIRROR, paintCell, resizeGrid } from '../src/motifs/editing';
 import { getMotif, listMotifs } from '../src/motifs/library';
@@ -69,5 +73,34 @@ describe('motif editing', () => {
       expect(Math.abs(cells[i][0] - cells[i - 1][0])).toBeLessThanOrEqual(1);
       expect(Math.abs(cells[i][1] - cells[i - 1][1])).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe('drawn symbols', () => {
+  it('draw at any size, small or large', () => {
+    for (const symbol of SYMBOLS) {
+      for (const height of [10, 28, 80]) {
+        const grid = symbolGrid(symbol, height);
+        expect(grid.height).toBe(height);
+        expect(grid.slots.filter((slot) => slot !== SLOT.ground && slot !== SLOT.outline).length).toBeGreaterThan(
+          height,
+        );
+      }
+    }
+  });
+
+  it('never mirror the saathiya or Om, but let figures face each other', () => {
+    const generator = getGenerator('symbols');
+    const zone = { width: 120, height: 60, random: mulberry32(1), seed: 1 };
+    const repeat = (symbol: string, mirror: boolean) =>
+      generator.generate({ ...defaultParams(generator.params), symbol, mirror, rotation: 0 }, zone);
+    for (const symbol of ['saathiya', 'om']) expect(repeat(symbol, true)).toEqual(repeat(symbol, false));
+    expect(repeat('mor', true)).not.toEqual(repeat('mor', false));
+    // Also as a library motif in the Picture motif pattern.
+    const picture = getGenerator('image');
+    const pictureOf = (asset: string, mirror: boolean) =>
+      picture.generate({ ...defaultParams(picture.params), asset, mirror, rotation: 0 }, zone);
+    expect(pictureOf('builtin:saathiya', true)).toEqual(pictureOf('builtin:saathiya', false));
+    expect(pictureOf('builtin:mor', true)).not.toEqual(pictureOf('builtin:mor', false));
   });
 });

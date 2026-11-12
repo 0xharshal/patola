@@ -5,7 +5,8 @@ also usable for design inspiration. Fully client-side, static hosting
 (GitHub Pages / nginx), GPU rendering, phone + tablet + desktop.
 License: **GPL-3.0-or-later**.
 
-How to use and build it, and the URL parameter reference: [README.md](README.md).
+How to use it: [README.md](README.md); building and releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+link parameters: [docs/LINKS.md](docs/LINKS.md).
 Code map and working conventions: [CLAUDE.md](CLAUDE.md). This file holds the
 decisions, the core idea and the roadmap.
 
@@ -15,7 +16,7 @@ decisions, the core idea and the roadmap.
 | -------------- | ------------------------------------------------------------------------------------------ |
 | Purpose        | Educational first, design inspiration second                                               |
 | Technique      | Patan **double ikat** (warp _and_ weft resist-dyed)                                        |
-| Realism        | Render modes Flat / Woven / Realistic, with an ikat bleed slider                           |
+| Realism        | Render modes Flat / Woven / Realistic, ikat bleed slider, yarn texture down to filaments   |
 | Gharchola      | Gharchola-style zari grid whose squares hold patola motifs                                 |
 | Assets         | Fixed motifs (elephant, parrot, dancer, …) as palette-slot grids; public-domain folk forms |
 | Custom content | Users can run their own pattern code and upload their own motif images                     |
@@ -23,7 +24,8 @@ decisions, the core idea and the roadmap.
 | Views          | Whole-piece overview and zoom into any zone; pan, pinch, wheel zoom                        |
 | Devices        | Phone and tablet required                                                                  |
 | Sharing        | Whole design in the URL: share links and a wallpaper generator                             |
-| Out of scope   | Gujarati UI labels, animation, server-side rendering                                       |
+| Exhibition     | Full-screen slideshow: an endless fabric of designs, or a camera tour of one at a time     |
+| Out of scope   | Gujarati UI labels, animated patterns, server-side rendering                               |
 | Stack          | Vite + TypeScript + Svelte 5, raw WebGL2, Vitest; tooling runs in a container              |
 
 ## 2. Core idea: threads, not pixels
@@ -53,8 +55,9 @@ Layout (zones)  ─►  Generators per zone  ─►  Design grid      ─►  We
 | 4   | Built-in motifs, Nari Kunjar, motif grid editor (draw, mirror, import / export)                     | Done   |
 | 5   | Export (tiled streaming PNG, JPG, SVG, design files), `download=` / `random=` / compact `d=` links  | Done   |
 | 6   | Thread views, Learn guide, mobile pass, lazy-loaded dialogs, GitHub Pages releases                  | Done   |
+| 7   | Exhibition: detailed realistic shader (feathering, yarn), full-resolution full-screen slideshow     | Done   |
 
-Each milestone ends in a working, deployable build. All six planned milestones are done.
+Each milestone ends in a working, deployable build. All seven milestones are done.
 
 ## 4. Open items and ideas
 

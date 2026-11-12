@@ -5,14 +5,18 @@
   import { GENERATORS, getGenerator } from '../generators/registry';
   import { setZoneGenerator } from '../core/design';
   import type { ZoneFill } from '../layouts/types';
+  import { ONE_MOTIF_KEYS } from '../generators/commonParams';
 
   /** Pattern choice and settings for one zone. */
   let {
     fill = $bindable(),
     palette,
     onUseColours,
+    oneMotif = false,
   }: {
     fill: ZoneFill;
+    /** The zone shows one whole motif per region, so it sets the repeat itself. */
+    oneMotif?: boolean;
     palette: string[];
     onUseColours: (colours: string[]) => void;
   } = $props();
@@ -41,6 +45,12 @@
       {onUseColours}
     />
   {:else}
-    <ParamControl {def} bind:value={fill.params[def.key]} />
+    <ParamControl {def} bind:value={fill.params[def.key]} disabled={oneMotif && ONE_MOTIF_KEYS.includes(def.key)} />
   {/if}
 {/each}
+{#if oneMotif && generator.params.some((def) => ONE_MOTIF_KEYS.includes(def.key))}
+  <p class="help">
+    Each square holds one whole motif, so its size follows the square size. Turn off “One motif per square” in the
+    layout settings to set it yourself.
+  </p>
+{/if}

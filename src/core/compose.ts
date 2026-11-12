@@ -1,8 +1,10 @@
-import { cellsForPixels, zoneFill, type Design } from './design';
+import { cellsForPixels, MAX_SIZE, renderSettings, zoneFill, type Design } from './design';
+import type { Params } from './params';
 import { mulberry32 } from './rng';
 import { getGenerator } from '../generators/registry';
 import { getLayout } from '../layouts/registry';
-import type { LayoutDef, Region, Size } from '../layouts/types';
+import { BODY_ZONE, holdsOneMotif, type LayoutDef, type Region, type Size } from '../layouts/types';
+import { oneMotifParams } from '../generators/commonParams';
 
 /** Design grid: one palette slot per cell. */
 export interface Grid extends Size {
@@ -17,6 +19,12 @@ export interface Composition {
 
 /** WebGL2 guarantees textures of at least this size on every device we target. */
 export const MAX_CELLS_PER_SIDE = 4096;
+
+/** Largest canvas side in pixels at these render settings: the design grid caps the cells per side. */
+export function maxCanvasSide(render: Params): number {
+  const { threadPx, step } = renderSettings(render);
+  return Math.min(MAX_SIZE, Math.floor(MAX_CELLS_PER_SIDE * threadPx * step));
+}
 
 /** Different but stable randomness per zone, derived from the design seed. */
 function zoneSeed(seed: number, zoneId: string): number {
@@ -65,12 +73,15 @@ export function compose(design: Design, screenPixels: Size): Composition {
       continue;
     }
     const zoneId = region.zone!;
+    const fill = zoneFill(design, zoneId);
+    const generator = getGenerator(fill.generator);
     const cacheKey = `${zoneId}:${region.width}x${region.height}`;
     let pattern = patterns.get(cacheKey);
     if (!pattern) {
-      const fill = zoneFill(design, zoneId);
       const seed = zoneSeed(design.seed, zoneId);
-      pattern = getGenerator(fill.generator).generate(fill.params, {
+      const zone = zoneId === BODY_ZONE ? layout.body : layout.zones.find((candidate) => candidate.id === zoneId);
+      const params = holdsOneMotif(zone, design.layoutSettings) ? oneMotifParams(fill.params, region) : fill.params;
+      pattern = generator.generate(params, {
         width: region.width,
         height: region.height,
         random: mulberry32(seed),
@@ -78,7 +89,10 @@ export function compose(design: Design, screenPixels: Size): Composition {
       });
       patterns.set(cacheKey, pattern);
     }
-    paintRegion(grid, region, pattern);
+    // Mirroring one way only (not both, which is a half turn) would flip a saathiya.
+    const mirrorsOneWay = Boolean(region.flipX) !== Boolean(region.flipY);
+    const keep = mirrorsOneWay && generator.keepsHandedness?.(fill.params) === true;
+    paintRegion(grid, keep ? { ...region, flipX: false, flipY: false } : region, pattern);
   }
   return { grid, layout, regions };
 }
