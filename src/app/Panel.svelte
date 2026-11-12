@@ -7,6 +7,7 @@
   import WeaveSection from './WeaveSection.svelte';
   import SizeSection from './SizeSection.svelte';
   import ZonePattern from './ZonePattern.svelte';
+  import VersionPicker from './VersionPicker.svelte';
   import { getLayout, patternOnly } from '../layouts/registry';
   import { BODY_ZONE, type Size } from '../layouts/types';
   import { SLOT_COUNT } from '../palettes/presets';
@@ -139,6 +140,7 @@
         <button class="button" onclick={onInstall} title="Use it like an app, also offline">Install app</button>
       {/if}
     </div>
+    <VersionPicker />
   </div>
 </aside>
 

@@ -27,6 +27,9 @@ decisions: [PLAN.md](PLAN.md).
   weft threads, to see how each set carries part of the pattern.
 - **Undo / redo**: buttons in the panel, or Ctrl+Z / Ctrl+Shift+Z.
 - **Phones**: the controls are a bottom sheet; tap its handle for full height.
+- **Versions**: at the bottom of the panel, pick any released version; your current
+  design opens in it. Each version has its own address (`…/v1.2.0/`), can be
+  installed on its own and keeps working offline.
 - **Install / offline**: it's an installable web app. Use _Install app_ in the
   panel (Chrome, Edge, Android) or _Share → Add to Home Screen_ (Safari, iOS).
   Once loaded it works offline; new versions are offered with a _Reload_ button.

@@ -43,7 +43,10 @@ Don't repeat those here; link to them.
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
   `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
-  motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt.
+  motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt;
+  `versions.ts` + `VersionPicker` find the published releases (`versions.json`) and switch
+  between them. The service worker matches pages ignoring the query and has no navigation
+  fallback, so the root's offline copy never answers for a release folder.
   Dialogs (export, learn, motif editor) and the exporter are loaded on first use.
 - `.github/workflows/ci.yml` — lint, test and build on `main` and pull requests (no deploy).
 - `.github/workflows/release.yml` + `scripts/publish-pages.sh` — on a `v*.*.*` tag, publish the

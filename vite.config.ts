@@ -35,6 +35,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
         cleanupOutdatedCaches: true,
+        // Every release is also published in its own folder (…/v1.2.0/), next to the
+        // newest one at the site root. A navigation fallback would make the root's
+        // offline copy answer for those folders too. Instead, pages are matched in
+        // the cache ignoring the query (the design), so each copy only serves itself.
+        navigateFallback: null,
+        ignoreURLParametersMatching: [/.*/],
       },
     }),
   ],
