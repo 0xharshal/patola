@@ -84,9 +84,30 @@ podman run --rm -p 8080:80 patola-playground   # http://localhost:8080
 Or copy `dist/` to any static host (nginx, …). Asset paths are relative, so it
 works from a sub-folder too.
 
-GitHub Pages: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-lints, tests, builds and publishes on every push to `main`. One-time setup: repository
-_Settings → Pages → Source: GitHub Actions_.
+### Releases on GitHub Pages
+
+Only tagged releases are published. Pushes to `main` and pull requests are
+checked (lint, tests, build) by [`ci.yml`](.github/workflows/ci.yml); a version
+tag runs [`release.yml`](.github/workflows/release.yml):
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+Every release stays online in its own folder, so a version can be pinned:
+
+| Address                                         | Serves                    |
+| ----------------------------------------------- | ------------------------- |
+| `https://<user>.github.io/<repo>/`              | the newest stable release |
+| `https://<user>.github.io/<repo>/v1.2.0/`       | exactly v1.2.0, forever   |
+| `https://<user>.github.io/<repo>/versions.json` | the list of releases      |
+
+Pre-releases (`v1.3.0-rc.1`) get a folder but don't replace the newest release,
+and a published version is never overwritten. Publishing is done by
+[`scripts/publish-pages.sh`](scripts/publish-pages.sh) on the `gh-pages` branch.
+One-time setup: repository _Settings → Pages → Source: Deploy from a branch_,
+branch `gh-pages`, folder `/ (root)` (the branch appears after the first release).
 
 ## URL parameters
 

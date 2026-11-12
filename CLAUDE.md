@@ -45,7 +45,10 @@ Don't repeat those here; link to them.
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
   motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt.
   Dialogs (export, learn, motif editor) and the exporter are loaded on first use.
-- `.github/workflows/deploy.yml` — test, build and publish to GitHub Pages.
+- `.github/workflows/ci.yml` — lint, test and build on `main` and pull requests (no deploy).
+- `.github/workflows/release.yml` + `scripts/publish-pages.sh` — on a `v*.*.*` tag, publish the
+  build to the `gh-pages` branch: in `<tag>/` (never overwritten) and, for the newest stable
+  release, at the root; `versions.json` lists them. The Node version comes from `.node-version`.
 
 ## Conventions
 

@@ -52,7 +52,7 @@ Layout (zones)  ─►  Generators per zone  ─►  Design grid      ─►  We
 | 3   | Layouts: saree, dupatta, gharchola, rug; zones with own patterns; camera; custom code; image motifs | Done   |
 | 4   | Built-in motifs, Nari Kunjar, motif grid editor (draw, mirror, import / export)                     | Done   |
 | 5   | Export (tiled streaming PNG, JPG, SVG, design files), `download=` / `random=` / compact `d=` links  | Done   |
-| 6   | Thread views, Learn guide, mobile pass, lazy-loaded dialogs, GitHub Pages workflow                  | Done   |
+| 6   | Thread views, Learn guide, mobile pass, lazy-loaded dialogs, GitHub Pages releases                  | Done   |
 
 Each milestone ends in a working, deployable build. All six planned milestones are done.
 
