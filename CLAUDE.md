@@ -56,7 +56,7 @@ Don't repeat those here; link to them.
   (and camera moves shimmer). Detail finer than a pixel must fade out (`resolved()`).
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
   `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `ExhibitionSection`,
-  `AdvancedSection` with `CanvasSize`); `Viewport` can be steered from outside (`camera` prop);
+  `AdvancedSection` with `CanvasSize` and `SeedField`); `Viewport` can be steered from outside (`camera` prop);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
   motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt;
   `versions.ts` + `VersionPicker` find the published releases (`versions.json`) and switch
@@ -75,7 +75,8 @@ Don't repeat those here; link to them.
 - Never mirror a saathiya (swastika) or Om: symbols that face a way set `faces`, library
   motifs `mirrorable`, and generators `keepsHandedness`, which layouts respect.
 - Designs store palette slot indices, never colours.
-- Everything random uses the design seed (deterministic output).
+- Everything random uses the design seed (deterministic output); exhibitions draw a fresh
+  seed of their own each time they start (path, panels, next designs).
 - New knobs go into a schema (generator `params`, layout `settings`, `RENDER_SCHEMA`).
   Declare generators and layouts with `defineGenerator` / `defineLayout` so settings are
   typed; read render settings with `renderSettings()`. No `as number` casts on settings.

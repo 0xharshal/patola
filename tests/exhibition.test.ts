@@ -314,13 +314,15 @@ describe('endless fabric', () => {
   it('gives every panel its own single-pattern design, the same each time', () => {
     const base = defaultDesign();
     applyLayout(base, 'saree');
-    const first = panelDesign(base, 'all', 0, 0);
+    const first = panelDesign(base, 'all', 0, 0, 7);
     expect(first.layout).toBe('tile');
     expect(first.generator).toBe(base.generator);
-    const other = panelDesign(base, 'all', 3, -2);
+    const other = panelDesign(base, 'all', 3, -2, 7);
     expect(other.layout).toBe('tile');
-    expect(other).toEqual(panelDesign(base, 'all', 3, -2));
-    expect(other).not.toEqual(panelDesign(base, 'all', -2, 3));
+    expect(other).toEqual(panelDesign(base, 'all', 3, -2, 7));
+    expect(other).not.toEqual(panelDesign(base, 'all', -2, 3, 7));
+    // Another exhibition (seed) gives the panel another design.
+    expect(other).not.toEqual(panelDesign(base, 'all', 3, -2, 8));
   });
 });
 

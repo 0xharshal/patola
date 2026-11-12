@@ -156,13 +156,19 @@ function panelRandom(seed: number, column: number, row: number): Rng {
 }
 
 /**
- * Design of one panel: `base` as a single pattern, changed as `vary` says
- * (panel 0, 0 shows `base` unchanged when nothing should vary).
+ * Design of one panel: `base` as a single pattern, changed as `vary` says, with
+ * randomness from `seed` (the exhibition's); panel 0, 0 shows `base` itself.
  */
-export function panelDesign(base: Design, vary: ExhibitionSettings['vary'], column: number, row: number): Design {
+export function panelDesign(
+  base: Design,
+  vary: ExhibitionSettings['vary'],
+  column: number,
+  row: number,
+  seed: number,
+): Design {
   const pattern: Design = JSON.parse(JSON.stringify(base));
   if (pattern.layout !== patternOnly.id) applyLayout(pattern, patternOnly.id);
   pattern.size = null;
   if (column === 0 && row === 0) return pattern;
-  return nextDesign(pattern, vary, panelRandom(base.seed, column, row), [patternOnly]);
+  return nextDesign(pattern, vary, panelRandom(seed, column, row), [patternOnly]);
 }

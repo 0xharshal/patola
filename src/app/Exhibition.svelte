@@ -5,7 +5,7 @@
   import type { Size } from '../layouts/types';
   import type { Design } from '../core/design';
   import type { Params } from '../core/params';
-  import { mulberry32 } from '../core/rng';
+  import { mulberry32, randomSeed } from '../core/rng';
   import { cameraAt, gridInterest, planImages, planTour } from '../exhibition/tour';
   import { TourPictures } from '../exhibition/pictures';
   import type { PatolaRenderer } from '../render/renderer';
@@ -58,6 +58,11 @@
   const FABRIC_LOOKAHEAD_SECONDS = [2, 5, 9, 14];
 
   const options = $derived(exhibitionSettings(settings));
+  /**
+   * A new seed for every exhibition, so each one takes its own path and shows its
+   * own designs; the design on show keeps its seed (its cloth looks the same).
+   */
+  const exhibitionSeed = randomSeed();
   let viewport: Size = $state({ width: 1, height: 1 });
   let pixelRatio = $state(1);
   /** Seconds into the current design. */
@@ -84,7 +89,7 @@
           pixelRatio,
           closeups: options.closeups,
           seconds: options.seconds,
-          random: mulberry32(design.seed + dropped + shown),
+          random: mulberry32(exhibitionSeed + dropped + shown),
           interest: gridInterest(frame.grid, frame.render.step),
         }),
   );
@@ -116,7 +121,7 @@
     if (lastMotion && JSON.stringify(lastMotion) === JSON.stringify(next)) return lastMotion;
     return (lastMotion = next);
   });
-  const fabricPath = $derived(new FabricPath(motion, fabricBase.seed));
+  const fabricPath = $derived(new FabricPath(motion, exhibitionSeed));
   let panels: FabricPanels | null = null;
 
   function fabricCamera(seconds: number): Camera {
@@ -127,7 +132,7 @@
   function drawFabric(renderer: PatolaRenderer, shown: Frame) {
     if (panels?.renderer !== renderer || panels.panel !== motion.panel || panels.scale !== fabricScale) {
       panels?.dispose();
-      panels = new FabricPanels(renderer, fabricBase, options.vary, motion.panel, fabricScale);
+      panels = new FabricPanels(renderer, fabricBase, options.vary, exhibitionSeed, motion.panel, fabricScale);
     }
     // Where the cloth will be in the next seconds (turns included), so those panels get prepared.
     const upcoming = FABRIC_LOOKAHEAD_SECONDS.map((ahead) => viewFor(fabricCamera(elapsed + ahead), viewport));
@@ -166,7 +171,7 @@
     }
     if (step > 0 && shown === shownDesigns.length - 1) {
       shownDesigns.push(
-        JSON.stringify(nextDesign(design, options.vary, mulberry32(design.seed * 31 + dropped + shown + 1))),
+        JSON.stringify(nextDesign(design, options.vary, mulberry32(exhibitionSeed * 31 + dropped + shown + 1))),
       );
       if (shownDesigns.length > MAX_HISTORY) {
         shownDesigns.shift();

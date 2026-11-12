@@ -29,6 +29,8 @@ export class FabricPanels {
     readonly renderer: PatolaRenderer,
     private base: Design,
     private vary: ExhibitionSettings['vary'],
+    /** The exhibition's seed: which designs the panels get. */
+    private seed: number,
     readonly panel: Size,
     readonly scale: number,
   ) {}
@@ -89,7 +91,8 @@ export class FabricPanels {
 
   /** Design of the panel at a fabric position (threads). */
   designAt(x: number, y: number): Design {
-    return panelDesign(this.base, this.vary, Math.floor(x / this.panel.width), Math.floor(y / this.panel.height));
+    const [column, row] = [Math.floor(x / this.panel.width), Math.floor(y / this.panel.height)];
+    return panelDesign(this.base, this.vary, column, row, this.seed);
   }
 
   private panelAt(column: number, row: number): Panel {
@@ -109,7 +112,7 @@ export class FabricPanels {
 
   /** Compose a panel's design and set up its (empty) image. */
   private create(column: number, row: number): Panel {
-    const design = panelDesign(this.base, this.vary, column, row);
+    const design = panelDesign(this.base, this.vary, column, row, this.seed);
     const render = renderSettings(design.render);
     // "Pattern only" fills the pixel size it is given: one panel, at the design's thread size.
     const composition = compose(design, {

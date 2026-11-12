@@ -2,9 +2,8 @@
   import ParamControl from './ParamControl.svelte';
   import PanelSection from './PanelSection.svelte';
   import { RENDER_MODES, RENDER_SCHEMA, type Design } from '../core/design';
-  import { MAX_SEED, randomSeed } from '../core/rng';
 
-  /** Render mode, weave and ikat settings, and the seed. */
+  /** Render mode, weave and ikat settings. */
   let { design = $bindable() }: { design: Design } = $props();
 
   const REALISTIC_ONLY = new Set(['bleed', 'warpJitter', 'weftJitter', 'texture']);
@@ -14,11 +13,6 @@
     if (REALISTIC_ONLY.has(key)) return design.mode !== 'realistic';
     if (NOT_IN_FLAT.has(key)) return design.mode === 'flat';
     return false;
-  }
-
-  function setSeed(raw: string) {
-    const seed = Math.round(Number(raw));
-    if (Number.isFinite(seed)) design.seed = Math.min(MAX_SEED, Math.max(0, seed));
   }
 </script>
 
@@ -36,21 +30,6 @@
   {#each RENDER_SCHEMA as def (def.key)}
     <ParamControl {def} bind:value={design.render[def.key]} disabled={isDisabled(def.key)} />
   {/each}
-  <div class="field">
-    <label for="seed">Seed</label>
-    <div class="button-row nowrap">
-      <input
-        id="seed"
-        type="number"
-        min="0"
-        max={MAX_SEED}
-        value={design.seed}
-        onchange={(event) => setSeed(event.currentTarget.value)}
-      />
-      <button class="button" onclick={() => (design.seed = randomSeed())}>New seed</button>
-    </div>
-    <p class="help">The seed decides how the threads drift and bleed. The same seed always gives the same cloth.</p>
-  </div>
 </PanelSection>
 
 <style>

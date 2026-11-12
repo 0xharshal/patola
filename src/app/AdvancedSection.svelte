@@ -2,11 +2,12 @@
   import ParamControl from './ParamControl.svelte';
   import PanelSection from './PanelSection.svelte';
   import CanvasSize from './CanvasSize.svelte';
+  import SeedField from './SeedField.svelte';
   import { DEVICE_SCHEMA, type DeviceSettings } from '../core/deviceSettings';
   import type { Design } from '../core/design';
   import type { Size } from '../layouts/types';
 
-  /** Canvas size (part of the design) and settings for this device only (kept in this browser, not in links). */
+  /** Canvas size and seed (part of the design) and settings for this device only (kept in this browser, not in links). */
   let {
     design = $bindable(),
     device = $bindable(),
@@ -18,6 +19,7 @@
 
 <PanelSection title="Advanced" open={false}>
   <CanvasSize bind:design {screenPixels} {pieceThreads} />
+  <SeedField bind:design />
   <h3 class="subheading">This device</h3>
   <p class="help">These stay in this browser and are not part of shared links.</p>
   {#each DEVICE_SCHEMA as def (def.key)}
