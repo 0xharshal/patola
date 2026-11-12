@@ -1,7 +1,8 @@
 # Production image: builds the static site, runs the tests, serves it with nginx.
-#   podman build -t patola-playground -f Containerfile .
+#   podman build --build-arg NODE_VERSION="$(cat .node-version)" -t patola-playground -f Containerfile .
 #   podman run --rm -p 8080:80 patola-playground   # http://localhost:8080
-FROM docker.io/library/node:22-alpine AS build
+ARG NODE_VERSION=24
+FROM docker.io/library/node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

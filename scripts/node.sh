@@ -10,8 +10,9 @@
 # Env overrides: CONTAINER_ENGINE=podman|docker, NODE_IMAGE=<image>
 set -euo pipefail
 
-IMAGE="${NODE_IMAGE:-docker.io/library/node:22-alpine}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The Node version lives in .node-version (also used by CI).
+IMAGE="${NODE_IMAGE:-docker.io/library/node:$(<"$ROOT/.node-version")-alpine}"
 
 ENGINE="${CONTAINER_ENGINE:-}"
 if [[ -z "$ENGINE" ]]; then
