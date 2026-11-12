@@ -78,8 +78,9 @@ uint pcgHash(uint value) {
   return (word >> 22u) ^ word;
 }
 
+// One hash of both inputs, the seed and a salt (cheap: this runs dozens of times per pixel).
 float random(int a, int b, uint salt) {
-  uint hash = pcgHash(uint(a) ^ pcgHash(uint(b) ^ pcgHash(uSeed ^ salt)));
+  uint hash = pcgHash(uint(a) * 0x8da6b343u ^ uint(b) * 0xd8163841u ^ (uSeed + salt * 0x9e3779b9u));
   return float(hash) / 4294967295.0;
 }
 
@@ -286,8 +287,12 @@ vec3 weave(vec2 piece) {
   float topCover = 1.0 - smoothstep(topWidth - edge, topWidth + edge, abs(top.across));
   float underCover = alone ? 0.0 : 1.0 - smoothstep(underWidth - edge, underWidth + edge, abs(under.across));
   Lighting lighting = lightingAt(piece);
-  vec3 below = mix(GAP, shadeYarn(under, underWidth, lighting), underCover);
-  vec3 woven = mix(below, shadeYarn(top, topWidth, lighting), topCover);
+  vec3 woven = shadeYarn(top, topWidth, lighting);
+  // Most pixels lie on the top thread: shade the one underneath only where it can show.
+  if (topCover < 1.0) {
+    vec3 below = mix(GAP, shadeYarn(under, underWidth, lighting), underCover);
+    woven = mix(below, woven, topCover);
+  }
   return mix(average, woven, detail);
 }
 
