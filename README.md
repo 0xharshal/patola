@@ -14,6 +14,8 @@ decisions: [PLAN.md](PLAN.md).
 - **Layout**: pick a piece (pattern only, saree, dupatta, gharchola grid, rug).
   Each part of the piece (body, borders, pallu, …) has its own pattern: choose
   a part to edit it, or use its zoom button to look at it.
+- **Rotation**: every pattern has a Rotation setting. At 45° a square grid becomes a
+  diagonal grid; edges stay stepped, as they would be when tied on the threads.
 - **Viewing**: drag to move, scroll or pinch to zoom, double-click to see everything.
 - **Weave**: _Flat_ shows the design grid, _Woven_ the threads, _Realistic_ adds
   the ikat bleed and thread shifts.

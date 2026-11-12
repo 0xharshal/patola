@@ -25,7 +25,8 @@ Don't repeat those here; link to them.
   `randomize.ts`, `history.ts` (undo), `rng.ts`, `base64.ts`, `imageFile.ts` (decode and
   shrink pictures), `changeSignal.ts` (subscribe/notify for non-Svelte modules).
 - `src/generators/` — one file per pattern, registered in `registry.ts`; shared
-  helpers in `shapes.ts` and `commonParams.ts`. A generator returns palette slot
+  helpers in `shapes.ts` and `commonParams.ts`; `rotation.ts` wraps every registered
+  generator with a Rotation setting (generators themselves stay upright). A generator returns palette slot
   indices (`SLOT`, plus `ZARI_SLOT` = 7) for a zone of width × height cells.
 - `src/layouts/` — pieces made of zones (`types.ts`); region helpers in `regions.ts`.
 - `src/custom/` — user code: `codeRunner.ts` (worker sandbox, trust, cache),

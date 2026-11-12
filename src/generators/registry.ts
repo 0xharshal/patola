@@ -11,7 +11,9 @@ import { kinar } from './kinar';
 import { imageMotif } from './imageMotif';
 import { nariKunjar } from './nariKunjar';
 import { customCode } from './customCode';
+import { withRotation } from './rotation';
 
+/** Every generator, each with a Rotation setting. */
 export const GENERATORS: Generator[] = [
   navratna,
   phool,
@@ -25,7 +27,7 @@ export const GENERATORS: Generator[] = [
   nariKunjar,
   imageMotif,
   customCode,
-];
+].map(withRotation);
 
 export const DEFAULT_GENERATOR_ID = navratna.id;
 
