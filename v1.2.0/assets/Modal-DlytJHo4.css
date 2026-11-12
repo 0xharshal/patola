@@ -1,0 +1,1 @@
+dialog.svelte-1yekfis{width:var(--modal-width);height:var(--modal-height);padding:0;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}dialog.svelte-1yekfis::backdrop{background:#00000080}@media(max-width:760px){.full-screen-on-phone.svelte-1yekfis{width:100vw;height:100dvh;max-width:none;max-height:none;border-radius:0}}
