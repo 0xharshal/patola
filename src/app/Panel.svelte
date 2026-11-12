@@ -5,7 +5,6 @@
   import PanelSection from './PanelSection.svelte';
   import LayoutSection from './LayoutSection.svelte';
   import WeaveSection from './WeaveSection.svelte';
-  import SizeSection from './SizeSection.svelte';
   import ExhibitionSection from './ExhibitionSection.svelte';
   import AdvancedSection from './AdvancedSection.svelte';
   import type { DeviceSettings } from '../core/deviceSettings';
@@ -149,11 +148,9 @@
 
     <WeaveSection bind:design />
 
-    <SizeSection bind:design {screenPixels} {pieceThreads} />
-
     <ExhibitionSection bind:exhibition onStart={onStartExhibition} onCopyLink={onCopyExhibitionLink} />
 
-    <AdvancedSection bind:device {gpuName} />
+    <AdvancedSection bind:design bind:device {gpuName} {screenPixels} {pieceThreads} />
 
     <div class="actions">
       <button class="button primary" onclick={onExport}>Export…</button>

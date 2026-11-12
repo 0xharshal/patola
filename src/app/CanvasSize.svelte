@@ -1,5 +1,4 @@
 <script lang="ts">
-  import PanelSection from './PanelSection.svelte';
   import { clampSize, MIN_SIZE, type Design } from '../core/design';
   import { maxCanvasSide } from '../core/compose';
   import { CANVAS_PRESETS, presetOf } from '../core/canvasSizes';
@@ -9,6 +8,7 @@
   /**
    * Canvas size of a single pattern: this screen, a ready-made size or a custom one
    * (other pieces get their size from the layout). Also shows the thread count.
+   * Part of the design, so it goes into links.
    */
   let {
     design = $bindable(),
@@ -49,7 +49,8 @@
   }
 </script>
 
-<PanelSection title={isPatternOnly ? 'Canvas size' : 'Size'} open={false}>
+<div class="canvas-size">
+  <h3 class="subheading">Canvas size</h3>
   {#if isPatternOnly}
     <div class="field">
       <label for={id}>Canvas</label>
@@ -91,11 +92,16 @@
     {/if}
   {/if}
   <p class="help">
+    {#if !isPatternOnly}The layout sets the size of this piece.{/if}
     {pieceThreads.width.toLocaleString()} × {pieceThreads.height.toLocaleString()} threads. Choose the image size when exporting.
   </p>
-</PanelSection>
+</div>
 
 <style>
+  .canvas-size {
+    display: grid;
+    gap: 14px;
+  }
   .dimensions {
     align-items: end;
   }

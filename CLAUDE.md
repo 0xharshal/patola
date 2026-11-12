@@ -55,8 +55,8 @@ Don't repeat those here; link to them.
   Shader effects must depend on piece position, never screen pixels, or tiles show seams
   (and camera moves shimmer). Detail finer than a pixel must fade out (`resolved()`).
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
-  `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`,
-  `ExhibitionSection`, `AdvancedSection`); `Viewport` can be steered from outside (`camera` prop);
+  `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `ExhibitionSection`,
+  `AdvancedSection` with `CanvasSize`); `Viewport` can be steered from outside (`camera` prop);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
   motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt;
   `versions.ts` + `VersionPicker` find the published releases (`versions.json`) and switch

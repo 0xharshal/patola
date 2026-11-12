@@ -55,8 +55,8 @@ browser: no sign-up, nothing to install, and it works offline once opened.
 5. **Weave**: _Flat_ shows the design, _Woven_ the threads, _Realistic_ the cloth
    as it comes off the loom. Drag to move, scroll or pinch to zoom, double-click
    to see everything; zoom in close to see the silk.
-6. **Canvas size** (single patterns): pick a size under _Canvas size_, or type your
-   own; ⇄ switches between portrait and landscape.
+6. **Canvas size** (single patterns): under _Advanced_, pick a ready-made size or
+   type your own; ⇄ switches between portrait and landscape.
 7. **Keep it**: _Export…_ saves an image or a design file; _Copy link_ copies a
    link to share. _Undo_ and _Redo_ (Ctrl+Z, Ctrl+Shift+Z) are at the top.
 
@@ -91,8 +91,8 @@ Android) or _Share → Add to Home Screen_ (Safari on iPhone and iPad). New
 versions are offered with a _Reload_ button, and every earlier version stays
 available under _Version_ at the bottom of the panel.
 
-_Advanced_ (bottom of the panel) has settings for this device only: which
-graphics card to use, how the exhibition draws, and its frame rate.
+_Advanced_ (bottom of the panel) has the canvas size, and settings for this device
+only: which graphics card to use, how the exhibition draws, and its frame rate.
 
 ## Browsers
 
