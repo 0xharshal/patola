@@ -1,4 +1,5 @@
-import { cellsForPixels, zoneFill, type Design } from './design';
+import { cellsForPixels, MAX_SIZE, renderSettings, zoneFill, type Design } from './design';
+import type { Params } from './params';
 import { mulberry32 } from './rng';
 import { getGenerator } from '../generators/registry';
 import { getLayout } from '../layouts/registry';
@@ -18,6 +19,12 @@ export interface Composition {
 
 /** WebGL2 guarantees textures of at least this size on every device we target. */
 export const MAX_CELLS_PER_SIDE = 4096;
+
+/** Largest canvas side in pixels at these render settings: the design grid caps the cells per side. */
+export function maxCanvasSide(render: Params): number {
+  const { threadPx, step } = renderSettings(render);
+  return Math.min(MAX_SIZE, Math.floor(MAX_CELLS_PER_SIDE * threadPx * step));
+}
 
 /** Different but stable randomness per zone, derived from the design seed. */
 function zoneSeed(seed: number, zoneId: string): number {

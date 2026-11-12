@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyLayout, defaultDesign } from '../src/core/design';
+import { applyLayout, defaultDesign, MAX_SIZE, MIN_SIZE } from '../src/core/design';
 import { designToQuery, parseUrl } from '../src/core/url';
 import { surprise } from '../src/core/randomize';
 import { mulberry32 } from '../src/core/rng';
@@ -85,6 +85,6 @@ describe('url', () => {
   });
 
   it('clamps huge sizes', () => {
-    expect(parseUrl('?w=100000&h=10').design.size).toEqual({ width: 8192, height: 64 });
+    expect(parseUrl('?w=100000&h=10').design.size).toEqual({ width: MAX_SIZE, height: MIN_SIZE });
   });
 });

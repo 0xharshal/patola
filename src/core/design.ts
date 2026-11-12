@@ -116,8 +116,11 @@ export function renderSettings(render: Params): RenderSettings {
 }
 
 export const MIN_SIZE = 64;
-/** Largest pixel size for wallpapers and saved images, for now; tiled export comes later. */
-export const MAX_SIZE = 8192;
+/**
+ * Largest canvas side in pixels for a single pattern. The design grid has at most
+ * MAX_CELLS_PER_SIDE cells per side, so small thread sizes allow less (see maxCanvasSide in compose.ts).
+ */
+export const MAX_SIZE = 16384;
 
 export interface Design extends ZoneFill {
   seed: number;

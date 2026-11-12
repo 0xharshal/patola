@@ -1,5 +1,6 @@
 /** Export sizes: presets for the long side of the image, and estimates. */
 import type { Size } from '../layouts/types';
+import { PAPER_300_DPI } from '../core/canvasSizes';
 
 export type SizePresetId = 'threads' | 'screen' | '4k' | 'a4' | 'a3' | 'a2' | 'custom';
 
@@ -15,9 +16,9 @@ export const SIZE_PRESETS: SizePreset[] = [
   { id: 'threads', label: 'At thread size', longSide: null },
   { id: 'screen', label: 'This screen', longSide: 'screen' },
   { id: '4k', label: '4K (3840 px)', longSide: 3840 },
-  { id: 'a4', label: 'A4 print, 300 dpi', longSide: 3508 },
-  { id: 'a3', label: 'A3 print, 300 dpi', longSide: 4961 },
-  { id: 'a2', label: 'A2 print, 300 dpi', longSide: 7016 },
+  { id: 'a4', label: 'A4 print, 300 dpi', longSide: PAPER_300_DPI.a4.height },
+  { id: 'a3', label: 'A3 print, 300 dpi', longSide: PAPER_300_DPI.a3.height },
+  { id: 'a2', label: 'A2 print, 300 dpi', longSide: PAPER_300_DPI.a2.height },
   { id: 'custom', label: 'Custom', longSide: null },
 ];
 

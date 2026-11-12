@@ -22,6 +22,9 @@ browser: no sign-up, nothing to install, and it works offline once opened.
   and trees. They are drawn from shapes, so they stay crisp at any size.
 - **Whole pieces**: a single pattern, saree, dupatta, gharchola grid or rug, each
   part (body, borders, pallu, …) with its own pattern.
+- **Any canvas size** for a single pattern: your screen, ready-made sizes (Full HD
+  to 8K, phone and tablet wallpapers, square, social posts, banners, A4 to A2
+  print) or your own width and height, portrait or landscape.
 - **Realistic cloth**: threads crossing over and under, shifted bundles of dyed
   threads, dye creeping past the ties, twisted silk filaments and a sheen that
   moves with the light. Look at the warp or weft threads on their own to see how
@@ -52,7 +55,9 @@ browser: no sign-up, nothing to install, and it works offline once opened.
 5. **Weave**: _Flat_ shows the design, _Woven_ the threads, _Realistic_ the cloth
    as it comes off the loom. Drag to move, scroll or pinch to zoom, double-click
    to see everything; zoom in close to see the silk.
-6. **Keep it**: _Export…_ saves an image or a design file; _Copy link_ copies a
+6. **Canvas size** (single patterns): pick a size under _Canvas size_, or type your
+   own; ⇄ switches between portrait and landscape.
+7. **Keep it**: _Export…_ saves an image or a design file; _Copy link_ copies a
    link to share. _Undo_ and _Redo_ (Ctrl+Z, Ctrl+Shift+Z) are at the top.
 
 ### Exhibition
