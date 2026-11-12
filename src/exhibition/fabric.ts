@@ -43,7 +43,8 @@ export interface FabricMotion {
 export function fabricMotion(viewport: Size, scale: number, threadsPerCell: number): FabricMotion {
   const screen = Math.min(viewport.width, viewport.height) / scale;
   const speed = SPEED * screen;
-  const margin = speed * FULL_SCREEN_SECONDS + 2 * TURN_RADIUS * screen * 0.5;
+  // Room for 5 s of gliding, and for the curve of a turn (one radius).
+  const margin = speed * FULL_SCREEN_SECONDS + TURN_RADIUS * screen;
   const cells = (threads: number) => Math.max(8, Math.ceil(threads / threadsPerCell)) * threadsPerCell;
   return {
     panel: { width: cells(viewport.width / scale + margin), height: cells(viewport.height / scale + margin) },
@@ -53,45 +54,91 @@ export function fabricMotion(viewport: Size, scale: number, threadsPerCell: numb
   };
 }
 
+/** One straight run across panels and the quarter turn that ends it. */
+interface Run {
+  /** Distance travelled (threads) when the run starts, and its straight part's start. */
+  from: number;
+  x: number;
+  y: number;
+  direction: Direction;
+  straight: number;
+  /** Direction after the turn. */
+  next: Direction;
+}
+
 /**
- * Camera centre (threads) after `seconds`. The cloth glides at a constant speed
- * along the centre lines of the panels, straight across 1 to LONGEST_RUN panels,
- * then turns a quarter left or right on a gentle curve centred on a panel's
- * middle, never reversing. Running along centre lines keeps each design filling
- * the screen while it passes.
+ * The path the cloth glides along: at a constant speed along the centre lines of
+ * the panels, straight across 1 to LONGEST_RUN panels, then a quarter turn left
+ * or right on a gentle curve centred on a panel's middle, never reversing.
+ * Running along centre lines keeps each design filling the screen while it
+ * passes. Runs are worked out once and kept, so asking for the centre at a time
+ * costs little however long the fabric has been running.
  */
-export function fabricCentre(
-  seconds: number,
-  { panel, turnRadius, speed, lead }: FabricMotion,
-  seed: number,
-): [number, number] {
-  const random = mulberry32(seed);
-  let direction = DIRECTIONS[Math.floor(random() * 4)];
-  // Start where the first panel begins to fill the screen, so it gets its full time too.
-  let [x, y] = [panel.width / 2 - direction[0] * lead, panel.height / 2 - direction[1] * lead];
-  let distance = Math.max(0, seconds) * speed;
-  let curvedIn = -lead; // how far into this run (from a panel's middle) we already are
-  for (;;) {
-    const panels = 1 + Math.floor(random() * LONGEST_RUN);
-    const run = panels * (direction[0] !== 0 ? panel.width : panel.height);
-    const straight = run - curvedIn - turnRadius;
-    if (distance <= straight) return [x + direction[0] * distance, y + direction[1] * distance];
-    distance -= straight;
-    // Quarter circle from `turnRadius` before the corner to `turnRadius` after it.
-    const next = DIRECTIONS[(DIRECTIONS.indexOf(direction) + (random() < 0.5 ? 1 : 3)) % 4];
-    const [startX, startY] = [x + direction[0] * straight, y + direction[1] * straight];
-    const arc = (Math.PI / 2) * turnRadius;
-    const along = Math.min(distance, arc) / turnRadius; // radians turned
-    // Centre of the curve: one radius to the side we turn to.
-    const [centreX, centreY] = [startX + next[0] * turnRadius, startY + next[1] * turnRadius];
-    const pointX = centreX - next[0] * turnRadius * Math.cos(along) + direction[0] * turnRadius * Math.sin(along);
-    const pointY = centreY - next[1] * turnRadius * Math.cos(along) + direction[1] * turnRadius * Math.sin(along);
-    if (distance <= arc) return [pointX, pointY];
-    distance -= arc;
-    [x, y] = [pointX, pointY];
-    direction = next;
-    curvedIn = turnRadius;
+export class FabricPath {
+  private readonly runs: Run[] = [];
+  private readonly random: Rng;
+  private readonly arc: number;
+
+  constructor(
+    readonly motion: FabricMotion,
+    seed: number,
+  ) {
+    const { panel, lead } = motion;
+    this.random = mulberry32(seed);
+    const direction = DIRECTIONS[Math.floor(this.random() * 4)];
+    this.arc = (Math.PI / 2) * motion.turnRadius;
+    // Start where the first panel begins to fill the screen, so it gets its full time too.
+    this.addRun(0, panel.width / 2 - direction[0] * lead, panel.height / 2 - direction[1] * lead, direction, -lead);
   }
+
+  /** `curvedIn`: how far into this run (from a panel's middle) it starts. */
+  private addRun(from: number, x: number, y: number, direction: Direction, curvedIn: number): Run {
+    const { panel, turnRadius } = this.motion;
+    const panels = 1 + Math.floor(this.random() * LONGEST_RUN);
+    const length = panels * (direction[0] !== 0 ? panel.width : panel.height);
+    const next = DIRECTIONS[(DIRECTIONS.indexOf(direction) + (this.random() < 0.5 ? 1 : 3)) % 4];
+    const run = { from, x, y, direction, straight: length - curvedIn - turnRadius, next };
+    this.runs.push(run);
+    return run;
+  }
+
+  /** Where `run` is after travelling `distance` along it (straight, then the turn). */
+  private pointOn(run: Run, distance: number): [number, number] {
+    const { direction, next, straight } = run;
+    if (distance <= straight) return [run.x + direction[0] * distance, run.y + direction[1] * distance];
+    const radius = this.motion.turnRadius;
+    const turned = Math.min(distance - straight, this.arc) / radius; // radians
+    // The curve's centre lies one radius towards the side it turns to.
+    const centreX = run.x + direction[0] * straight + next[0] * radius;
+    const centreY = run.y + direction[1] * straight + next[1] * radius;
+    return [
+      centreX - next[0] * radius * Math.cos(turned) + direction[0] * radius * Math.sin(turned),
+      centreY - next[1] * radius * Math.cos(turned) + direction[1] * radius * Math.sin(turned),
+    ];
+  }
+
+  /** Camera centre (threads) after `seconds`. */
+  centreAt(seconds: number): [number, number] {
+    const distance = Math.max(0, seconds) * this.motion.speed;
+    let last = this.runs[this.runs.length - 1];
+    while (last.from + last.straight + this.arc < distance) {
+      const [x, y] = this.pointOn(last, last.straight + this.arc);
+      last = this.addRun(last.from + last.straight + this.arc, x, y, last.next, this.motion.turnRadius);
+    }
+    // The run holding `distance`: binary search, as times may also go back (previous, pause).
+    let [low, high] = [0, this.runs.length - 1];
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2);
+      if (this.runs[middle].from <= distance) low = middle;
+      else high = middle - 1;
+    }
+    return this.pointOn(this.runs[low], distance - this.runs[low].from);
+  }
+}
+
+/** Camera centre (threads) after `seconds` (see FabricPath). */
+export function fabricCentre(seconds: number, motion: FabricMotion, seed: number): [number, number] {
+  return new FabricPath(motion, seed).centreAt(seconds);
 }
 
 /** Panels (column, row) overlapping the area from (x, y), width × height threads. */

@@ -74,12 +74,3 @@ On Linux, start the browser on the card you want, e.g. by its PCI address:
 ```bash
 DRI_PRIME=pci-0000_04_00_0 chromium
 ```
-
-## Kiosks
-
-A page can't enter full screen by itself: click _Full screen_ once, or start the
-browser in kiosk mode with an exhibition link (see [LINKS.md](LINKS.md)):
-
-```bash
-chromium --kiosk 'https://0xharshal.github.io/patola/?view=exhibition&x.style=fabric'
-```

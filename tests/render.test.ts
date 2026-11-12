@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lampPosition, samplesPerAxis } from '../src/render/renderer';
+import { FRAGMENT_SHADER, IMAGE_FRAGMENT_SHADER } from '../src/render/shaders';
 
 describe('supersampling', () => {
   it('samples small threads 2 × 2, never flat cells', () => {
@@ -19,5 +20,12 @@ describe('lamp', () => {
     const [fromRightX, fromRightY] = lampPosition(area, 90);
     expect(fromRightX).toBeGreaterThan(100);
     expect(fromRightY).toBeCloseTo(25);
+  });
+});
+
+describe('shaders', () => {
+  it('share one sRGB conversion', () => {
+    for (const shader of [FRAGMENT_SHADER, IMAGE_FRAGMENT_SHADER])
+      expect(shader.match(/vec3 linearToSrgb\(/g)).toHaveLength(1);
   });
 });

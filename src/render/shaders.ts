@@ -1,3 +1,11 @@
+/** Linear light to sRGB for the screen; shared by the shaders below. */
+const LINEAR_TO_SRGB = /* glsl */ `
+vec3 linearToSrgb(vec3 linear) {
+  linear = clamp(linear, 0.0, 1.0);
+  return mix(linear * 12.92, 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, linear));
+}
+`;
+
 /** Full-screen triangle, no vertex buffers needed. */
 export const VERTEX_SHADER = /* glsl */ `#version 300 es
 void main() {
@@ -297,11 +305,7 @@ vec3 weave(vec2 piece) {
   return mix(average, woven, detail);
 }
 
-vec3 linearToSrgb(vec3 linear) {
-  linear = clamp(linear, 0.0, 1.0);
-  return mix(linear * 12.92, 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, linear));
-}
-
+${LINEAR_TO_SRGB}
 void main() {
   vec2 pixel = vec2(gl_FragCoord.x, uViewSize.y - gl_FragCoord.y);
   vec2 pieceSize = vec2(uGridSize) * uThreadsPerCell;
@@ -348,11 +352,7 @@ uniform float uOpacity;
 
 out vec4 outColor;
 
-vec3 linearToSrgb(vec3 linear) {
-  linear = clamp(linear, 0.0, 1.0);
-  return mix(linear * 12.92, 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, linear));
-}
-
+${LINEAR_TO_SRGB}
 void main() {
   vec2 pixel = vec2(gl_FragCoord.x, uViewSize.y - gl_FragCoord.y);
   vec2 position = (uOrigin + pixel / uScale - uArea.xy) / uArea.zw;

@@ -18,19 +18,28 @@
 
   const id = $props.id();
   const isPatternOnly = $derived(design.layout === patternOnly.id);
-  /** Chosen in the list but not (yet) a preset size. */
-  let customChosen = $state(false);
-  const choice = $derived(
-    design.size === null ? 'screen' : customChosen ? 'custom' : (presetOf(design.size)?.id ?? 'custom'),
-  );
+  /**
+   * 'Custom size' picked while the size was a preset: remembered for that size, so the
+   * list shows it until the size changes (undo, links and design files then show their own).
+   */
+  let customFor: string | null = $state(null);
+  const sizeKey = (size: Size) => `${size.width}x${size.height}`;
+  const choice = $derived.by(() => {
+    if (design.size === null) return 'screen';
+    if (customFor === sizeKey(design.size)) return 'custom';
+    return presetOf(design.size)?.id ?? 'custom';
+  });
   const largest = $derived(maxCanvasSide(design.render));
   const capped = $derived(screenPixels.width > largest || screenPixels.height > largest);
 
   function choose(value: string) {
-    customChosen = value === 'custom';
+    customFor = null;
     if (value === 'screen') design.size = null;
-    else if (value === 'custom') design.size = { ...screenPixels };
-    else {
+    else if (value === 'custom') {
+      // Keep the current size; type a new width or height.
+      design.size ??= { ...screenPixels };
+      customFor = sizeKey(design.size);
+    } else {
       const preset = CANVAS_PRESETS.find((candidate) => candidate.id === value)!;
       design.size = { width: preset.width, height: preset.height };
     }
@@ -39,7 +48,6 @@
   function setDimension(key: keyof Size, raw: string) {
     const pixels = Number(raw);
     if (!design.size || !Number.isFinite(pixels) || pixels <= 0) return;
-    customChosen = true;
     design.size[key] = clampSize(pixels);
   }
 

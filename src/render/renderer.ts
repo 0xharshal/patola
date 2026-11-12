@@ -338,8 +338,11 @@ export class PatolaRenderer {
     gl.uniform2f(this.uniform('uOrigin', program), view.originX - at.x, view.originY - at.y);
     gl.uniform1f(this.uniform('uScale', program), view.scale);
     gl.uniform1f(this.uniform('uOpacity', program), opacity);
+    // Always the whole canvas: rendering an image in between leaves the viewport at its size.
+    gl.viewport(0, 0, view.width, view.height);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // Blend colours, but keep the canvas opaque (its alpha stays 1, or the page would show through).
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.disable(gl.BLEND);
   }

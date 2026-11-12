@@ -24,7 +24,8 @@
 <PanelSection title="Exhibition" open={false}>
   <p class="help">
     A full-screen slideshow for a large screen: one design at a time, toured from the whole piece down to single
-    threads, or an endless fabric of many designs gliding past. Space pauses, arrow keys skip, Esc ends it.
+    threads, or an endless fabric of many designs gliding past. Space pauses, Esc ends it; with one design at a time,
+    arrow keys skip.
   </p>
   {#each EXHIBITION_SCHEMA as def (def.key)}
     <ParamControl

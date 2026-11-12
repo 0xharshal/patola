@@ -70,10 +70,11 @@ Under _Exhibition_, choose a style and press _Start exhibition_:
   or down; each design fills the whole screen for a while.
 
 Choose what changes from one design to the next and how long each stays. Space
-pauses, the arrow keys skip, F switches full screen and Esc ends the exhibition;
-_Edit this design_ takes the design on show back to the editor. The screen stays
-on while it runs (on `https://` pages). _Copy exhibition link_ makes a link that
-opens straight into it, e.g. for a kiosk or a lobby screen.
+pauses, F switches full screen and Esc ends the exhibition; with one design at a
+time the arrow keys skip to the next or previous design. _Edit this design_ takes
+the design on show back to the editor. The screen stays on while it runs (on
+`https://` pages). _Copy exhibition link_ makes a link that opens straight into
+it, e.g. for a kiosk or a lobby screen ([docs/LINKS.md](docs/LINKS.md)).
 
 ### Your own motifs and patterns
 

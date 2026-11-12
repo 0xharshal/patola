@@ -3,7 +3,7 @@ import { cameraAt, gridInterest, planImages, planTour, zoomMove } from '../src/e
 import type { Camera } from '../src/render/camera';
 import { EXHIBITION_SCHEMA, nextDesign } from '../src/exhibition/settings';
 import { applyLayout, defaultDesign } from '../src/core/design';
-import { fabricCentre, fabricMotion, panelDesign, panelsIn } from '../src/exhibition/fabric';
+import { FabricPath, fabricCentre, fabricMotion, panelDesign, panelsIn } from '../src/exhibition/fabric';
 import { defaultParams } from '../src/core/params';
 import { mulberry32 } from '../src/core/rng';
 import { designToQuery, parseUrl } from '../src/core/url';
@@ -321,5 +321,16 @@ describe('endless fabric', () => {
     expect(other.layout).toBe('tile');
     expect(other).toEqual(panelDesign(base, 'all', 3, -2));
     expect(other).not.toEqual(panelDesign(base, 'all', -2, 3));
+  });
+});
+
+describe('fabric path', () => {
+  it('gives the same centres whether asked in order, out of order or afresh', () => {
+    const motion = fabricMotion({ width: 1920, height: 1080 }, 3, 2);
+    const path = new FabricPath(motion, 4);
+    const late = path.centreAt(3000);
+    expect(path.centreAt(12)).toEqual(new FabricPath(motion, 4).centreAt(12)); // back in time
+    expect(late).toEqual(new FabricPath(motion, 4).centreAt(3000));
+    expect(fabricCentre(777, motion, 4)).toEqual(path.centreAt(777));
   });
 });

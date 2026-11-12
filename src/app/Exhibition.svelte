@@ -10,7 +10,7 @@
   import { TourPictures } from '../exhibition/pictures';
   import type { PatolaRenderer } from '../render/renderer';
   import { exhibitionSettings, nextDesign } from '../exhibition/settings';
-  import { fabricCentre, fabricMotion } from '../exhibition/fabric';
+  import { FabricPath, fabricMotion, type FabricMotion } from '../exhibition/fabric';
   import { FabricPanels } from '../exhibition/fabricPanels';
   import { viewFor, type Camera } from '../render/camera';
   import { getGenerator } from '../generators/registry';
@@ -106,11 +106,21 @@
   // Endless fabric: panels of single-pattern designs around the one on show, gliding by.
   const fabricBase: Design = JSON.parse(JSON.stringify(design));
   const fabricScale = $derived(FABRIC_SCALE * pixelRatio);
-  const motion = $derived(fabricMotion(viewport, fabricScale, frame.render.step));
+  /**
+   * Panel size and speed. Recomputing them (e.g. when the app recomposes) gives the same
+   * object back while the values are unchanged, so the path and the panel images are kept.
+   */
+  let lastMotion: FabricMotion | null = null;
+  const motion = $derived.by(() => {
+    const next = fabricMotion(viewport, fabricScale, frame.render.step);
+    if (lastMotion && JSON.stringify(lastMotion) === JSON.stringify(next)) return lastMotion;
+    return (lastMotion = next);
+  });
+  const fabricPath = $derived(new FabricPath(motion, fabricBase.seed));
   let panels: FabricPanels | null = null;
 
   function fabricCamera(seconds: number): Camera {
-    const [centreX, centreY] = fabricCentre(seconds, motion, fabricBase.seed);
+    const [centreX, centreY] = fabricPath.centreAt(seconds);
     return { centreX, centreY, scale: fabricScale };
   }
 
@@ -194,15 +204,24 @@
    * for again when the page shows or is touched.
    */
   let wakeLock: WakeLockSentinel | null = null;
+  /** One request at a time: pointer moves ask again, and an unreleased extra lock would outlive the exhibition. */
+  let requestingWakeLock = false;
+  let ended = false;
   async function keepScreenOn() {
-    if (document.visibilityState !== 'visible' || (wakeLock && !wakeLock.released)) return;
+    if (ended || document.visibilityState !== 'visible' || requestingWakeLock || (wakeLock && !wakeLock.released))
+      return;
     if (!('wakeLock' in navigator)) return;
+    requestingWakeLock = true;
     wakeLock = await navigator.wakeLock.request('screen').catch(() => null);
+    requestingWakeLock = false;
+    // The exhibition may have ended while the browser was deciding.
+    if (ended) void wakeLock?.release().catch(() => {});
   }
   onMount(() => {
     void keepScreenOn();
     document.addEventListener('visibilitychange', keepScreenOn);
     return () => {
+      ended = true;
       document.removeEventListener('visibilitychange', keepScreenOn);
       void wakeLock?.release().catch(() => {});
     };
@@ -226,6 +245,8 @@
   });
 
   function toggleFullscreen() {
+    // Some browsers (Safari on iPhone) have no full screen for pages.
+    if (!document.fullscreenEnabled) return;
     const change = document.fullscreenElement
       ? document.exitFullscreen()
       : document.documentElement.requestFullscreen();

@@ -45,5 +45,9 @@ exhibition for a kiosk that shows new sarees, rugs and patterns every 90 seconds
 ?view=exhibition&x.seconds=90&random=all
 ```
 
-A page can't enter full screen by itself, so on a kiosk either click _Full screen_
-once or start the browser in kiosk mode (e.g. `chromium --kiosk '<link>'`).
+On a kiosk: a page can't enter full screen by itself, so click _Full screen_ once,
+or start the browser in kiosk mode with an exhibition link:
+
+```bash
+chromium --kiosk 'https://0xharshal.github.io/patola/?view=exhibition&x.style=fabric'
+```
