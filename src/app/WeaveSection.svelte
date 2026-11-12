@@ -7,7 +7,7 @@
   /** Render mode, weave and ikat settings, and the seed. */
   let { design = $bindable() }: { design: Design } = $props();
 
-  const REALISTIC_ONLY = new Set(['bleed', 'warpJitter', 'weftJitter']);
+  const REALISTIC_ONLY = new Set(['bleed', 'warpJitter', 'weftJitter', 'texture']);
   const NOT_IN_FLAT = new Set(['sheen', 'threads']);
 
   function isDisabled(key: string): boolean {

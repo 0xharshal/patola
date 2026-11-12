@@ -15,7 +15,7 @@ decisions, the core idea and the roadmap.
 | -------------- | ------------------------------------------------------------------------------------------ |
 | Purpose        | Educational first, design inspiration second                                               |
 | Technique      | Patan **double ikat** (warp _and_ weft resist-dyed)                                        |
-| Realism        | Render modes Flat / Woven / Realistic, with an ikat bleed slider                           |
+| Realism        | Render modes Flat / Woven / Realistic, ikat bleed slider, yarn texture down to filaments   |
 | Gharchola      | Gharchola-style zari grid whose squares hold patola motifs                                 |
 | Assets         | Fixed motifs (elephant, parrot, dancer, …) as palette-slot grids; public-domain folk forms |
 | Custom content | Users can run their own pattern code and upload their own motif images                     |

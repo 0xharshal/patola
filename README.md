@@ -18,7 +18,9 @@ decisions: [PLAN.md](PLAN.md).
   diagonal grid; edges stay stepped, as they would be when tied on the threads.
 - **Viewing**: drag to move, scroll or pinch to zoom, double-click to see everything.
 - **Weave**: _Flat_ shows the design grid, _Woven_ the threads, _Realistic_ adds
-  the ikat bleed and thread shifts.
+  what dyeing and weaving do: bundles of threads shifted along their length, dye
+  wicking past the ties (the feathered ikat edges), and the yarn itself (twisted
+  silk filaments, uneven threads, sheen). Zoom in close to see the threads.
 - **Colours**: presets, your own colours (lock, reorder, shuffle), colours from
   a photo, and palettes saved in your browser.
 - **Learn**: a short guide to patola and double ikat. Its buttons show what it
@@ -132,6 +134,7 @@ generator. The address bar updates as you edit. Invalid values are ignored.
 | `thread`                         | `3`                                                                                                                                     | Thread width in pixels                                                                                                                                                                                   |
 | `step`                           | `2`                                                                                                                                     | Threads per design cell                                                                                                                                                                                  |
 | `bleed`, `warp`, `weft`, `sheen` | `0.3`                                                                                                                                   | Ikat bleed, warp / weft shift, silk sheen (0–1)                                                                                                                                                          |
+| `texture`                        | `0.6`                                                                                                                                   | Yarn texture (0–1)                                                                                                                                                                                       |
 | `threads`                        | `both`, `warp`, `weft`                                                                                                                  | Show the woven cloth or one set of dyed threads                                                                                                                                                          |
 | `view`                           | `wallpaper`                                                                                                                             | Full-screen picture, no controls                                                                                                                                                                         |
 | `random`                         | `pattern,colours,seed` or `all`                                                                                                         | Re-roll these on every load (great with `view=wallpaper`)                                                                                                                                                |

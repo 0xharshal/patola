@@ -12,7 +12,8 @@ export interface Camera {
 
 export type FitMode = 'contain' | 'cover';
 
-export const MAX_SCALE = 48;
+/** Closest zoom, in pixels per thread: close enough to see the silk filaments. */
+export const MAX_SCALE = 96;
 
 /** Camera showing `area` (in threads) inside the viewport, leaving `marginPx` around it. */
 export function fitCamera(area: Rect, viewport: Size, mode: FitMode = 'contain', marginPx = 0): Camera {

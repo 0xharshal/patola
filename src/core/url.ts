@@ -57,6 +57,7 @@ const RENDER_URL_NAMES: Record<string, string> = {
   warpJitter: 'warp',
   weftJitter: 'weft',
   sheen: 'sheen',
+  texture: 'texture',
   threads: 'threads',
 };
 

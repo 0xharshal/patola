@@ -36,10 +36,12 @@ Don't repeat those here; link to them.
   (pure grid operations behind the editor).
 - `src/education/guide.ts` — the Learn guide (technique texts; motif/layout texts come from their definitions) and its actions.
 - `src/palettes/` — presets, random palettes, `extract.ts` (k-means quantising).
-- `src/render/` — `renderer.ts` (WebGL2), `shaders.ts` (double-ikat weave), `camera.ts`.
+- `src/render/` — `renderer.ts` (WebGL2, linear-light palette, supersampling), `shaders.ts`
+  (double-ikat weave: bundle shifts, wicking, yarn texture, sheen), `camera.ts`.
 - `src/export/` — `exporter.ts` (one entry for all formats), `raster.ts` (tiled
   rendering in bands), `png.ts` (streaming PNG via CompressionStream), `svg.ts`, `sizes.ts`.
-  Shader effects must depend on piece position, never screen pixels, or tiles show seams.
+  Shader effects must depend on piece position, never screen pixels, or tiles show seams
+  (and camera moves shimmer). Detail finer than a pixel must fade out (`resolved()`).
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
   `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the

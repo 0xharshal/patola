@@ -8,6 +8,25 @@ const MODE_INDEX: Record<RenderMode, number> = { flat: 0, woven: 1, realistic: 2
 const THREAD_VIEW_INDEX: Record<RenderSettings['threads'], number> = { both: 0, warp: 1, weft: 2 };
 const PALETTE_SIZE = 8;
 
+/** sRGB channel (0…255) to linear light (0…1): the shader mixes and lights colours linearly. */
+function srgbToLinear(channel: number): number {
+  const value = channel / 255;
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+function linearRgb(hex: string): [number, number, number] {
+  const [red, green, blue] = hexToRgb(hex);
+  return [srgbToLinear(red), srgbToLinear(green), srgbToLinear(blue)];
+}
+
+/**
+ * Samples per pixel along each axis. Threads only a few pixels wide alias in the
+ * woven modes, so those pixels are supersampled (2 × 2); flat cells never need it.
+ */
+export function samplesPerAxis(mode: RenderMode, pixelsPerThread: number): number {
+  return mode !== 'flat' && pixelsPerThread < 4 ? 2 : 1;
+}
+
 /** Which part of the piece to draw, and how large. */
 export interface View {
   /** Render target size in pixels. */
@@ -46,6 +65,8 @@ export class PatolaRenderer {
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false });
     if (!gl) throw new WebGLUnavailableError('WebGL2 is not available in this browser.');
+    // Palette colours are sRGB; say so, so colour-managed (e.g. wide-gamut) screens show them exactly.
+    gl.drawingBufferColorSpace = 'srgb';
     this.gl = gl;
     this.createResources();
 
@@ -111,9 +132,7 @@ export class PatolaRenderer {
     const withZari = [...palette.slice(0, ZARI_SLOT)];
     withZari[ZARI_SLOT] = ZARI_COLOUR;
     withZari.forEach((hex, slot) => {
-      if (!hex) return;
-      const [red, green, blue] = hexToRgb(hex);
-      colours.set([red / 255, green / 255, blue / 255], slot * 3);
+      if (hex) colours.set(linearRgb(hex), slot * 3);
     });
     return colours;
   }
@@ -133,14 +152,14 @@ export class PatolaRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.gridTexture);
 
-    const [red, green, blue] = hexToRgb(frame.background);
     gl.uniform1i(this.uniform('uGrid'), 0);
     gl.uniform2i(this.uniform('uGridSize'), frame.grid.width, frame.grid.height);
     gl.uniform3fv(this.uniform('uPalette'), this.paletteUniform(frame.palette));
-    gl.uniform3f(this.uniform('uBackground'), red / 255, green / 255, blue / 255);
+    gl.uniform3fv(this.uniform('uBackground'), linearRgb(frame.background));
     gl.uniform2f(this.uniform('uViewSize'), view.width, view.height);
     gl.uniform2f(this.uniform('uOrigin'), view.originX, view.originY);
     gl.uniform1f(this.uniform('uScale'), view.scale);
+    gl.uniform1i(this.uniform('uSamples'), samplesPerAxis(frame.mode, view.scale));
     gl.uniform1f(this.uniform('uThreadsPerCell'), render.step);
     gl.uniform1i(this.uniform('uWarpHorizontal'), frame.warpHorizontal ? 1 : 0);
     gl.uniform1i(this.uniform('uMode'), MODE_INDEX[frame.mode]);
@@ -149,6 +168,7 @@ export class PatolaRenderer {
     gl.uniform1f(this.uniform('uWarpJitter'), render.warpJitter);
     gl.uniform1f(this.uniform('uWeftJitter'), render.weftJitter);
     gl.uniform1f(this.uniform('uSheen'), render.sheen);
+    gl.uniform1f(this.uniform('uTexture'), render.texture);
     gl.uniform1ui(this.uniform('uSeed'), frame.seed >>> 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
