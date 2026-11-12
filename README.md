@@ -93,6 +93,12 @@ scripts/node.sh npm run build    # type-check + build into dist/
 scripts/node.sh npm run preview  # serve the build on http://localhost:4173 (offline/PWA testing)
 ```
 
+Both servers listen on all network interfaces, so a phone, tablet or big screen on
+the same network can open `http://<this computer's IP>:5173`. Set
+`PUBLISH_ADDRESS=127.0.0.1` to keep them on this computer. Over plain `http` from
+another device the browser allows no service worker, so offline use needs
+`localhost` or HTTPS.
+
 Production image (nginx):
 
 ```bash
