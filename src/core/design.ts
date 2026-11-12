@@ -75,6 +75,16 @@ export const RENDER_SCHEMA = [
     help: 'Light gliding along the silk fibres as each thread rises over and dives under the others',
   },
   {
+    key: 'light',
+    type: 'int',
+    label: 'Light from',
+    min: 0,
+    max: 355,
+    step: 5,
+    default: 315,
+    help: 'Where the lamp is, in degrees: 0 above, 90 right, 180 below, 270 left. The silk reflects it, so the sheen moves with it and as you move around the cloth.',
+  },
+  {
     key: 'texture',
     type: 'float',
     label: 'Yarn texture',

@@ -43,6 +43,8 @@ async function renderBands(
         renderer.draw({
           ...frame,
           background: '#000000',
+          // One lamp over the whole image, so tiles join without seams.
+          lightArea: { x: 0, y: 0, width: size.width / pixelsPerThread, height: size.height / pixelsPerThread },
           view: {
             width: columns,
             height: rows,

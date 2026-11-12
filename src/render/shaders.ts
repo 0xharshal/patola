@@ -56,15 +56,13 @@ uniform float uWarpJitter;
 uniform float uWeftJitter;
 uniform float uSheen;
 uniform float uTexture;       // yarn texture strength
+uniform vec3 uLight;          // lamp position: piece position (threads) and height above the cloth
 uniform uint uSeed;
 
 out vec4 outColor;
 
 const uint ZARI = 7u;
 const float TAU = 6.2831853;
-// Light from the top left (piece space: x right, y down, z towards the viewer).
-const vec3 LIGHT = normalize(vec3(-0.45, -0.55, 0.7));
-const vec3 HALF_VECTOR = normalize(LIGHT + vec3(0.0, 0.0, 1.0));
 const vec3 GAP = vec3(0.01);  // looking through the cloth between threads
 const float THREAD_HALF_WIDTH = 0.43;
 const float CRIMP = 0.35;     // how steeply threads rise over and dive under each other
@@ -168,7 +166,19 @@ float halfWidth(Yarn yarn) {
 }
 
 // One thread at one point: rounded, crimped over and under, twisted, lit in linear light.
-vec3 shadeYarn(Yarn yarn, float width) {
+// The lamp seen from a point of the cloth (piece space: x right, y down, z towards the viewer),
+// and the half vector between it and the viewer straight above.
+struct Lighting {
+  vec3 light;
+  vec3 halfVector;
+};
+
+Lighting lightingAt(vec2 piece) {
+  vec3 light = normalize(uLight - vec3(piece, 0.0));
+  return Lighting(light, normalize(light + vec3(0.0, 0.0, 1.0)));
+}
+
+vec3 shadeYarn(Yarn yarn, float width, Lighting lighting) {
   float q = clamp(yarn.across / width, -1.0, 1.0);   // -1…1 across the round thread
   float bulge = sqrt(1.0 - q * q);
   // Crimp: height follows cos along the crossing, so the slope is -sin.
@@ -188,15 +198,17 @@ vec3 shadeYarn(Yarn yarn, float width) {
   float twistPhase = yarn.position * TWISTS + q * 0.5;
   float twist = sin(TAU * twistPhase) * resolved(TWISTS);
 
-  float diffuse = max(dot(normal, LIGHT), 0.0) / LIGHT.z;
+  // Relative to flat cloth at this point, so the palette colour shows where a thread faces the lamp.
+  float diffuse = max(dot(normal, lighting.light), 0.0) / max(lighting.light.z, 0.2);
   // Threads passing underneath, and the ends where a thread dives, get less light.
   float occlusion = yarn.lift < 0.0 ? 0.5 + 0.25 * abs(2.0 * yarn.along) : 1.0 - 0.3 * pow(abs(2.0 * yarn.along), 4.0);
-  // Sheen: a narrow streak along the thread where its round side faces the light (across),
-  // long and soft along it, fading where the thread dives (crimp).
+  // Sheen: a narrow streak along the thread where its round side mirrors the lamp (across),
+  // long and soft along it, fading where the thread dives (crimp). The lamp is at one place,
+  // so the streak slides across the threads from one part of the cloth to the next.
   vec3 crossNormal = normalize(acrossDir * q + up * bulge);
   vec3 crimpNormal = normalize(up - alongDir * slope);
-  float acrossFacing = max(dot(crossNormal, HALF_VECTOR), 0.0);
-  float alongFacing = max(dot(crimpNormal, HALF_VECTOR), 0.0);
+  float acrossFacing = max(dot(crossNormal, lighting.halfVector), 0.0);
+  float alongFacing = max(dot(crimpNormal, lighting.halfVector), 0.0);
   float twistGlint = 1.0 + 0.6 * twist * yarnTexture; // twisted fibres catch the light in diagonal bands
   if (yarn.dye.zari) {
     // Flat metal strip wrapped round a silk core: bright, coloured reflections in bands.
@@ -273,8 +285,9 @@ vec3 weave(vec2 piece) {
   float underWidth = halfWidth(under);
   float topCover = 1.0 - smoothstep(topWidth - edge, topWidth + edge, abs(top.across));
   float underCover = alone ? 0.0 : 1.0 - smoothstep(underWidth - edge, underWidth + edge, abs(under.across));
-  vec3 below = mix(GAP, shadeYarn(under, underWidth), underCover);
-  vec3 woven = mix(below, shadeYarn(top, topWidth), topCover);
+  Lighting lighting = lightingAt(piece);
+  vec3 below = mix(GAP, shadeYarn(under, underWidth, lighting), underCover);
+  vec3 woven = mix(below, shadeYarn(top, topWidth, lighting), topCover);
   return mix(average, woven, detail);
 }
 

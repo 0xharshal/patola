@@ -3,6 +3,7 @@ import { hexToRgb, ZARI_COLOUR } from '../palettes/presets';
 import type { RenderMode, RenderSettings } from '../core/design';
 import type { Grid } from '../core/compose';
 import { ZARI_SLOT } from '../generators/types';
+import type { Rect } from '../layouts/types';
 
 const MODE_INDEX: Record<RenderMode, number> = { flat: 0, woven: 1, realistic: 2 };
 const THREAD_VIEW_INDEX: Record<RenderSettings['threads'], number> = { both: 0, warp: 1, weft: 2 };
@@ -39,6 +40,22 @@ export interface View {
   scale: number;
 }
 
+/**
+ * Where the lamp hangs over `area` (in threads): off to the side the light comes
+ * from (0° = from the top, 90° = from the right) and as high as the area is large,
+ * so every part of the cloth sees it from a slightly different angle. Returns
+ * piece x, y and height, in threads.
+ */
+export function lampPosition(area: Rect, fromDegrees: number): [number, number, number] {
+  const size = Math.max(area.width, area.height);
+  const radians = (fromDegrees * Math.PI) / 180;
+  return [
+    area.x + area.width / 2 + Math.sin(radians) * 0.6 * size,
+    area.y + area.height / 2 - Math.cos(radians) * 0.6 * size,
+    0.7 * size,
+  ];
+}
+
 export interface Frame {
   grid: Grid;
   warpHorizontal: boolean;
@@ -48,6 +65,8 @@ export interface Frame {
   render: RenderSettings;
   seed: number;
   view: View;
+  /** Area the lamp is placed over (threads); default: the visible part. Tiled exports pass the whole image. */
+  lightArea?: Rect;
 }
 
 export class WebGLUnavailableError extends Error {}
@@ -169,6 +188,13 @@ export class PatolaRenderer {
     gl.uniform1f(this.uniform('uWeftJitter'), render.weftJitter);
     gl.uniform1f(this.uniform('uSheen'), render.sheen);
     gl.uniform1f(this.uniform('uTexture'), render.texture);
+    const visible = {
+      x: view.originX,
+      y: view.originY,
+      width: view.width / view.scale,
+      height: view.height / view.scale,
+    };
+    gl.uniform3fv(this.uniform('uLight'), lampPosition(frame.lightArea ?? visible, render.light));
     gl.uniform1ui(this.uniform('uSeed'), frame.seed >>> 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

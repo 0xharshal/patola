@@ -8,7 +8,7 @@
   let { design = $bindable() }: { design: Design } = $props();
 
   const REALISTIC_ONLY = new Set(['bleed', 'warpJitter', 'weftJitter', 'texture']);
-  const NOT_IN_FLAT = new Set(['sheen', 'threads']);
+  const NOT_IN_FLAT = new Set(['sheen', 'light', 'threads']);
 
   function isDisabled(key: string): boolean {
     if (REALISTIC_ONLY.has(key)) return design.mode !== 'realistic';
