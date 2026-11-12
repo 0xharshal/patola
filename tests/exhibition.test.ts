@@ -106,7 +106,7 @@ describe('exhibition designs', () => {
   it('opens from a link with its settings', () => {
     const state = parseUrl('?view=exhibition&x.vary=colours&x.seconds=90&x.closeups=0&gen=phool');
     expect(state.view).toBe('exhibition');
-    expect(state.exhibition).toEqual({ vary: 'colours', seconds: 90, closeups: false, fps: '30', captions: true });
+    expect(state.exhibition).toEqual({ vary: 'colours', seconds: 90, closeups: false, captions: true });
     const again = parseUrl(`?${designToQuery(state.design, 'exhibition', state.exhibition)}`);
     expect(again.view).toBe('exhibition');
     expect(again.exhibition).toEqual(state.exhibition);

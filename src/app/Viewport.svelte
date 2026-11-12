@@ -22,6 +22,8 @@
     threadPx,
     camera: directedCamera,
     onresize,
+    gpu = 'default',
+    ongpu,
   }: {
     /** Everything to draw except the view, which this component owns. */
     frame: Omit<Frame, 'view' | 'background'>;
@@ -34,6 +36,10 @@
     camera?: Camera;
     /** Called with the viewport size in device pixels, and device pixels per CSS pixel. */
     onresize?: (viewport: Size, pixelRatio: number) => void;
+    /** Graphics card to ask for; read once (remount the viewer to switch). */
+    gpu?: WebGLPowerPreference;
+    /** Called with the name of the graphics card that draws. */
+    ongpu?: (name: string) => void;
   } = $props();
 
   function renderPixelRatio(): number {
@@ -93,7 +99,8 @@
 
   onMount(() => {
     try {
-      renderer = new PatolaRenderer(canvas);
+      renderer = new PatolaRenderer(canvas, gpu);
+      ongpu?.(renderer.gpuName());
     } catch (problem) {
       error = problem instanceof Error ? problem.message : String(problem);
     }

@@ -22,6 +22,8 @@
     pieceThreads,
     threadPx,
     settings,
+    gpu,
+    fps,
     onExit,
   }: {
     design: Design;
@@ -29,6 +31,10 @@
     pieceThreads: Size;
     threadPx: number;
     settings: Params;
+    /** Graphics card to ask for. */
+    gpu: WebGLPowerPreference;
+    /** Redraws per second. */
+    fps: number;
     /** Back to the editor, with the design on show. */
     onExit: () => void;
   } = $props();
@@ -108,7 +114,7 @@
     const tick = (now: number) => {
       frameId = requestAnimationFrame(tick);
       // Draw only as often as the frame rate asks (a little early is fine: screens refresh at their own pace).
-      if (now - last < 1000 / Number(options.fps) - 4) return;
+      if (now - last < 1000 / fps - 4) return;
       // At most 0.1 s per frame, so a hidden tab doesn't jump ahead when it comes back.
       const seconds = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -194,6 +200,7 @@
       {threadPx}
       interactive={false}
       {camera}
+      {gpu}
       onresize={(size, ratio) => {
         viewport = size;
         pixelRatio = ratio;

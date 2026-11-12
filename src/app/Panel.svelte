@@ -7,6 +7,8 @@
   import WeaveSection from './WeaveSection.svelte';
   import SizeSection from './SizeSection.svelte';
   import ExhibitionSection from './ExhibitionSection.svelte';
+  import AdvancedSection from './AdvancedSection.svelte';
+  import type { DeviceSettings } from '../core/deviceSettings';
   import ZonePattern from './ZonePattern.svelte';
   import VersionPicker from './VersionPicker.svelte';
   import { getLayout, patternOnly } from '../layouts/registry';
@@ -20,6 +22,8 @@
   let {
     design = $bindable(),
     exhibition = $bindable(),
+    device = $bindable(),
+    gpuName,
     screenPixels,
     pieceThreads,
     canUndo,
@@ -39,6 +43,9 @@
   }: {
     design: Design;
     exhibition: Params;
+    device: DeviceSettings;
+    /** Graphics card drawing, as the browser names it. */
+    gpuName: string;
     screenPixels: Size;
     pieceThreads: Size;
     canUndo: boolean;
@@ -140,6 +147,8 @@
     <SizeSection bind:design {screenPixels} {pieceThreads} />
 
     <ExhibitionSection bind:exhibition onStart={onStartExhibition} onCopyLink={onCopyExhibitionLink} />
+
+    <AdvancedSection bind:device {gpuName} />
 
     <div class="actions">
       <button class="button primary" onclick={onExport}>Export…</button>

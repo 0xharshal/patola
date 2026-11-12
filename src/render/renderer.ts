@@ -81,8 +81,12 @@ export class PatolaRenderer {
   private uploadedGrid: Grid | null = null;
   private lastFrame: Frame | null = null;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false });
+  /** `gpu`: which graphics card to ask the browser for; it decides. */
+  constructor(
+    private canvas: HTMLCanvasElement,
+    gpu: WebGLPowerPreference = 'default',
+  ) {
+    const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false, powerPreference: gpu });
     if (!gl) throw new WebGLUnavailableError('WebGL2 is not available in this browser.');
     // Palette colours are sRGB; say so, so colour-managed (e.g. wide-gamut) screens show them exactly.
     gl.drawingBufferColorSpace = 'srgb';
@@ -211,6 +215,13 @@ export class PatolaRenderer {
       topDown.set(bottomUp.subarray((height - 1 - row) * rowBytes, (height - row) * rowBytes), row * rowBytes);
     }
     return topDown;
+  }
+
+  /** Name of the graphics card drawing, as far as the browser tells (some hide or shorten it). */
+  gpuName(): string {
+    const gl = this.gl;
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
   }
 
   /** Release the GPU context (for one-off renderers such as image export). */

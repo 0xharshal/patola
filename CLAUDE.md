@@ -23,7 +23,8 @@ Don't repeat those here; link to them.
   (param schemas → UI + URL; `ParamValues<typeof schema>` types), `compose.ts` (layout regions + zone patterns → one
   grid), `url.ts`, `compactLink.ts` (`d=` links), `designFile.ts` (.patola.json),
   `randomize.ts`, `history.ts` (undo), `rng.ts`, `base64.ts`, `imageFile.ts` (decode and
-  shrink pictures), `changeSignal.ts` (subscribe/notify for non-Svelte modules).
+  shrink pictures), `changeSignal.ts` (subscribe/notify for non-Svelte modules), `deviceSettings.ts`
+  (graphics card, frame rate: per browser, never in links).
 - `src/generators/` — one file per pattern, registered in `registry.ts`; shared
   helpers in `shapes.ts` and `commonParams.ts`; `rotation.ts` wraps every registered
   generator with a Rotation setting (generators themselves stay upright). A generator returns palette slot
@@ -47,7 +48,7 @@ Don't repeat those here; link to them.
   (and camera moves shimmer). Detail finer than a pixel must fade out (`resolved()`).
 - `src/app/` — Svelte components; shared control styles live in `src/app.css`.
   `Panel` is composed of `PanelSection`s (`LayoutSection`, `WeaveSection`, `SizeSection`,
-  `ExhibitionSection`); `Viewport` can be steered from outside (`camera` prop);
+  `ExhibitionSection`, `AdvancedSection`); `Viewport` can be steered from outside (`camera` prop);
   dialogs use `Modal`; file pickers use `FileButton`; `MotifCanvas` draws and paints the
   motif grid for `MotifEditor`; `pwa.ts` registers the service worker and install prompt;
   `versions.ts` + `VersionPicker` find the published releases (`versions.json`) and switch

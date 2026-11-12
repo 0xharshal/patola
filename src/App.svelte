@@ -16,6 +16,7 @@
   import type { ExportSource } from './export/exporter';
   import { scaleForLongSide } from './export/sizes';
   import type { Size } from './layouts/types';
+  import { loadDeviceSettings, saveDeviceSettings } from './core/deviceSettings';
 
   let { initial }: { initial: UrlState } = $props();
   // The URL is read once at start-up; later changes come from the editor.
@@ -25,6 +26,11 @@
   let design: Design = $state(initial.design);
   // svelte-ignore state_referenced_locally
   let exhibition = $state(initial.exhibition);
+  /** This device's settings (graphics card, frame rate), kept in the browser. */
+  let device = $state(loadDeviceSettings());
+  $effect(() => saveDeviceSettings($state.snapshot(device)));
+  /** Name of the graphics card drawing, once the viewer has started. */
+  let gpuName = $state('');
   let viewportComponent: ReturnType<typeof Viewport> | undefined = $state();
 
   let innerWidth = $state(window.innerWidth);
@@ -187,7 +193,7 @@
 
   /** Which dialog is open. Dialogs are loaded on first use to keep the first page load small. */
   let openDialog: 'export' | 'learn' | null = $state(null);
-  const exportSource: ExportSource = $derived({ design, composition, frame, pieceThreads });
+  const exportSource: ExportSource = $derived({ design, composition, frame, pieceThreads, gpu: device.gpu });
 
   async function openDesignFile(file: File) {
     try {
@@ -237,24 +243,32 @@
           {pieceThreads}
           threadPx={render.threadPx}
           settings={exhibition}
+          gpu={device.gpu}
+          fps={Number(device.fps)}
           onExit={() => (view = 'editor')}
         />
       {/await}
     {:else}
-      <Viewport
-        bind:this={viewportComponent}
-        {frame}
-        {pieceThreads}
-        threadPx={render.threadPx}
-        interactive={view === 'editor'}
-        fitMode={view === 'wallpaper' ? 'cover' : 'contain'}
-      />
+      {#key device.gpu}
+        <Viewport
+          bind:this={viewportComponent}
+          {frame}
+          {pieceThreads}
+          threadPx={render.threadPx}
+          interactive={view === 'editor'}
+          fitMode={view === 'wallpaper' ? 'cover' : 'contain'}
+          gpu={device.gpu}
+          ongpu={(name) => (gpuName = name)}
+        />
+      {/key}
     {/if}
   </main>
   {#if view === 'editor'}
     <Panel
       bind:design
       bind:exhibition
+      bind:device
+      {gpuName}
       {screenPixels}
       {pieceThreads}
       {canUndo}
