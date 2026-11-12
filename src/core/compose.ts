@@ -2,7 +2,8 @@ import { cellsForPixels, zoneFill, type Design } from './design';
 import { mulberry32 } from './rng';
 import { getGenerator } from '../generators/registry';
 import { getLayout } from '../layouts/registry';
-import type { LayoutDef, Region, Size } from '../layouts/types';
+import { BODY_ZONE, holdsOneMotif, type LayoutDef, type Region, type Size } from '../layouts/types';
+import { oneMotifParams } from '../generators/commonParams';
 
 /** Design grid: one palette slot per cell. */
 export interface Grid extends Size {
@@ -70,7 +71,9 @@ export function compose(design: Design, screenPixels: Size): Composition {
     if (!pattern) {
       const fill = zoneFill(design, zoneId);
       const seed = zoneSeed(design.seed, zoneId);
-      pattern = getGenerator(fill.generator).generate(fill.params, {
+      const zone = zoneId === BODY_ZONE ? layout.body : layout.zones.find((candidate) => candidate.id === zoneId);
+      const params = holdsOneMotif(zone, design.layoutSettings) ? oneMotifParams(fill.params, region) : fill.params;
+      pattern = getGenerator(fill.generator).generate(params, {
         width: region.width,
         height: region.height,
         random: mulberry32(seed),

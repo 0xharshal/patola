@@ -12,7 +12,7 @@
   import ZonePattern from './ZonePattern.svelte';
   import VersionPicker from './VersionPicker.svelte';
   import { getLayout, patternOnly } from '../layouts/registry';
-  import { BODY_ZONE, type Size } from '../layouts/types';
+  import { BODY_ZONE, holdsOneMotif, type Size } from '../layouts/types';
   import { SLOT_COUNT } from '../palettes/presets';
   import { zoneFill, type Design } from '../core/design';
   import type { Params } from '../core/params';
@@ -134,7 +134,12 @@
     <PanelSection title={isPatternOnly ? 'Pattern' : `Pattern: ${activeZone.name}`}>
       {#if activeZone.about}<p class="help">{activeZone.about}</p>{/if}
       {#key activeZone.id + design.layout}
-        <ZonePattern fill={activeFill} palette={design.palette} onUseColours={useColours} />
+        <ZonePattern
+          fill={activeFill}
+          palette={design.palette}
+          onUseColours={useColours}
+          oneMotif={holdsOneMotif(activeZone, design.layoutSettings)}
+        />
       {/key}
     </PanelSection>
 

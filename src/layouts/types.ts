@@ -1,4 +1,4 @@
-import type { ParamSchema, ParamValues, Params } from '../core/params';
+import type { BoolParam, ParamSchema, ParamValues, Params } from '../core/params';
 
 export interface Size {
   width: number;
@@ -34,6 +34,26 @@ export interface ZoneDef {
   about: string;
   /** Default pattern for this zone (params are overrides of the generator defaults). */
   fill: { generator: string; params?: Params };
+  /**
+   * Regions can show one whole motif each, centred (e.g. gharchola squares).
+   * The layout then has ONE_MOTIF_SETTING; while it is on, the pattern's repeat
+   * follows the region size and half-drop is off.
+   */
+  oneMotif?: boolean;
+}
+
+/** Layout setting for zones with `oneMotif`: on by default, so motifs line up with their regions. */
+export const ONE_MOTIF_SETTING: BoolParam<'oneMotif'> = {
+  key: 'oneMotif',
+  type: 'bool',
+  label: 'One motif per square',
+  default: true,
+  help: 'Size each motif to fill its square, centred. Turn off to set the repeat size and half-drop yourself.',
+};
+
+/** Whether a zone currently shows one whole motif per region. */
+export function holdsOneMotif(zone: Pick<ZoneDef, 'oneMotif'> | undefined, layoutSettings: Params): boolean {
+  return zone?.oneMotif === true && layoutSettings[ONE_MOTIF_SETTING.key] === true;
 }
 
 /** Every layout has a body zone; its pattern lives in Design.generator / Design.params. */

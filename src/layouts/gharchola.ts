@@ -1,6 +1,6 @@
 import { ZARI_SLOT } from '../generators/types';
 import { frameRegions, insetRect } from './regions';
-import { BODY_ZONE, defineLayout, type Region } from './types';
+import { BODY_ZONE, defineLayout, ONE_MOTIF_SETTING, type Region } from './types';
 
 /**
  * Gharchola-style grid: gold (zari) lines divide the cloth into squares, each
@@ -36,11 +36,13 @@ export const gharchola = defineLayout({
         { value: 'single', label: 'All squares A' },
       ],
     },
+    ONE_MOTIF_SETTING,
     { key: 'border', type: 'int', label: 'Border width', min: 0, max: 60, default: 18 },
   ],
   body: {
     name: 'Squares A',
     about: 'The motif in the first set of squares.',
+    oneMotif: true,
     fill: { generator: 'phool', params: { repeat: 24, halfDrop: false, leaves: 0 } },
   },
   zones: [
@@ -48,6 +50,7 @@ export const gharchola = defineLayout({
       id: 'cellB',
       name: 'Squares B',
       about: 'The motif in the alternate squares.',
+      oneMotif: true,
       fill: { generator: 'navratna', params: { repeat: 24, rings: 0, cornerJewel: false } },
     },
     {

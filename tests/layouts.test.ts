@@ -4,6 +4,7 @@ import { compose, MAX_CELLS_PER_SIDE } from '../src/core/compose';
 import { LAYOUTS } from '../src/layouts/registry';
 import { defaultParams } from '../src/core/params';
 import { ZARI_SLOT } from '../src/generators/types';
+import { getGenerator } from '../src/generators/registry';
 
 const screen = { width: 1200, height: 800 };
 
@@ -49,6 +50,22 @@ describe('layouts', () => {
     const design = defaultDesign();
     applyLayout(design, 'gharchola');
     expect(compose(design, screen).grid.slots).toContain(ZARI_SLOT);
+  });
+
+  it('gharchola squares hold one whole motif by default, whatever the repeat setting', () => {
+    const gridFor = (repeat: number, halfDrop: boolean, oneMotif = true) => {
+      const design = defaultDesign();
+      applyLayout(design, 'gharchola');
+      design.layoutSettings.oneMotif = oneMotif;
+      design.generator = 'diamonds';
+      design.params = { ...defaultParams(getGenerator('diamonds').params), repeat, halfDrop };
+      design.zones.cellB.params = { ...design.zones.cellB.params, repeat: repeat + 5, halfDrop };
+      return compose(design, screen).grid.slots;
+    };
+    // The squares are 24 cells: a 32-cell half-dropped repeat must look the same as a 24-cell one.
+    expect(gridFor(32, true)).toEqual(gridFor(24, false));
+    // Turned off, the pattern's own repeat applies.
+    expect(gridFor(32, true, false)).not.toEqual(gridFor(24, false, false));
   });
 
   it('switching layout gives every zone a pattern', () => {
